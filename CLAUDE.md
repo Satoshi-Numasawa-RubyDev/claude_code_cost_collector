@@ -16,6 +16,10 @@ bank/implement_steps.yaml
 # 開発コマンド
 - uv を用いる事
 
+# ブランチ戦略
+- グローバルCLAUDE.mdのbranch_strategyに従う
+- developブランチを開発のメインブランチとして使用
+
 
 
 # コードの修正後
