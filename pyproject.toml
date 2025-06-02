@@ -16,7 +16,6 @@ dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "black>=23.0",
-    "flake8>=6.0",
     "mypy>=1.0",
 ]
 
@@ -34,9 +33,19 @@ packages = ["claude_code_cost_collector"]
 line-length = 130
 target-version = ['py313']
 
-[tool.flake8]
-max-line-length = 130
-extend-ignore = ["E203", "W503"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py313"
+
+[tool.ruff.lint]
+extend-ignore = ["E203"]
+select = ["E", "F", "I"]  # Enable import sorting (I) along with errors (E) and pyflakes (F)
+
+[tool.ruff.lint.isort]
+known-first-party = ["claude_code_cost_collector"]
+force-single-line = false
+split-on-trailing-comma = true
 
 [tool.mypy]
 python_version = "3.13"
@@ -54,7 +63,6 @@ python_functions = ["test_*"]
 dev = [
     "black>=25.1.0",
     "build>=1.2.2.post1",
-    "flake8>=7.2.0",
     "mypy>=1.16.0",
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",

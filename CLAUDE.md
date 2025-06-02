@@ -29,7 +29,8 @@ bank/implement_steps.yaml
 - 以下を実行し, 正常であるか確認する事
     - `uv run python -m pytest tests/ -v`
     - `uv run python -m black .`
-    - `uv run python -m flake8 claude_code_cost_collector/ tests/`
+    - `uv run ruff check claude_code_cost_collector/ tests/`
+    - `uv run ruff format claude_code_cost_collector/ tests/` (import整理含む)
     - `uv run python -m mypy claude_code_cost_collector/`
 
 
