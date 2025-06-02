@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-06-02
+
+### Changed
+- **Development Tools**: Migrated from flake8 to ruff for unified linting and formatting
+  - Replaced flake8 with ruff for improved performance and unified tooling
+  - Added ruff isort integration for automatic import organization
+  - Updated development workflows and documentation to reflect new tooling
+
+### Documentation
+- Updated CLAUDE.md with comprehensive development tools information
+- Added detailed ruff configuration and workflow documentation
+- Corrected test count and version information in project documentation
+
+### Technical Improvements
+- Unified linting, formatting, and import organization under ruff
+- Improved code consistency with automatic import sorting
+- Enhanced development experience with faster tooling
+
 ## [1.0.0] - 2025-06-02
 
 ### Changed

@@ -423,7 +423,7 @@ class TestEndToEndIntegration:
 
         assert result.returncode == 0
         assert "claude-code-cost-collector" in result.stdout
-        assert "1.0.0" in result.stdout
+        assert "1.0.1" in result.stdout
 
     def test_new_sort_interface_date_descending(self):
         """Test new sort interface with date field descending order."""
