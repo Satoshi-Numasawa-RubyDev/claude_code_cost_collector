@@ -4,18 +4,18 @@ This module serves as the main entry point for the application.
 Controls the overall processing flow from command-line argument parsing to output.
 """
 
-import sys
 import logging
-from typing import Optional, List
+import sys
+from typing import List, Optional
 
+from .aggregator import AggregationError, aggregate_data
 from .cli import parse_arguments
-from .config import load_config, validate_config, ConfigError
 from .collector import collect_log_files
-from .parser import parse_multiple_log_files, LogParseError
-from .aggregator import aggregate_data, AggregationError
-from .formatter import format_data, FormatterError
-from .exchange import get_exchange_rate, ExchangeRateError
+from .config import ConfigError, load_config, validate_config
+from .exchange import ExchangeRateError, get_exchange_rate
+from .formatter import FormatterError, format_data
 from .models import ProcessedLogEntry
+from .parser import LogParseError, parse_multiple_log_files
 
 
 def setup_logging(verbose: bool = False) -> None:

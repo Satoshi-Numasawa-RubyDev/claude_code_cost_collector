@@ -8,9 +8,9 @@ individual).
 
 import logging
 from collections import defaultdict
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
-from .models import ProcessedLogEntry, ProcessedLogEntries, AggregatedData
+from .models import AggregatedData, ProcessedLogEntries, ProcessedLogEntry
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def aggregate_data(entries: ProcessedLogEntries, granularity: str, **kwargs: Any
     # Validate granularity
     valid_granularities = ["daily", "monthly", "project", "session", "all"]
     if granularity not in valid_granularities:
-        raise ValueError(f"Invalid granularity '{granularity}'. " f"Must be one of: {valid_granularities}")
+        raise ValueError(f"Invalid granularity '{granularity}'. Must be one of: {valid_granularities}")
 
     if not entries:
         logger.warning("No entries provided for aggregation")
@@ -220,7 +220,7 @@ def _prepare_individual_entries(entries: ProcessedLogEntries, **kwargs: Any) -> 
     result = {}
     for i, entry in enumerate(entries):
         # Create a unique key for each entry (using index + some entry info)
-        key = f"{i:06d}_{entry.timestamp.strftime('%Y%m%d_%H%M%S')}" f"_{entry.session_id[:8]}"
+        key = f"{i:06d}_{entry.timestamp.strftime('%Y%m%d_%H%M%S')}_{entry.session_id[:8]}"
 
         # Convert entry to dictionary and add some computed fields
         entry_dict = entry.to_dict()
@@ -355,7 +355,7 @@ def validate_aggregation_input(entries: ProcessedLogEntries, granularity: str) -
         raise ValueError("All entries must be ProcessedLogEntry objects")
 
     if granularity not in get_supported_granularities():
-        raise ValueError(f"Invalid granularity '{granularity}'. " f"Must be one of: {get_supported_granularities()}")
+        raise ValueError(f"Invalid granularity '{granularity}'. Must be one of: {get_supported_granularities()}")
 
 
 def _add_converted_costs_to_entries(

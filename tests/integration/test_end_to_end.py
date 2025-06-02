@@ -5,15 +5,16 @@ These tests verify the complete application workflow from command-line input
 to output generation.
 """
 
-import pytest
-import json
-import yaml
 import csv
-import tempfile
+import json
 import subprocess
 import sys
-from pathlib import Path
+import tempfile
 from io import StringIO
+from pathlib import Path
+
+import pytest
+import yaml
 
 
 class TestEndToEndIntegration:

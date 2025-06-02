@@ -4,18 +4,18 @@ This module provides functions to format aggregated data and individual log entr
 into various output formats including text tables, JSON, YAML, and CSV.
 """
 
-import json
 import csv
-import yaml
-from io import StringIO
-from typing import List, Dict, Any, Union, Optional
+import json
 from datetime import datetime
+from io import StringIO
+from typing import Any, Dict, List, Optional, Union
 
-from rich.table import Table
+import yaml
 from rich.console import Console
+from rich.table import Table
 from rich.text import Text
 
-from .models import ProcessedLogEntries, AggregatedData
+from .models import AggregatedData, ProcessedLogEntries
 
 
 class FormatterError(Exception):
@@ -53,7 +53,7 @@ def format_data(
     supported_formats = {"text", "json", "yaml", "csv"}
 
     if output_format not in supported_formats:
-        raise FormatterError(f"Unsupported output format: {output_format}. " f"Supported formats: {', '.join(supported_formats)}")
+        raise FormatterError(f"Unsupported output format: {output_format}. Supported formats: {', '.join(supported_formats)}")
 
     # Apply limit if specified, but preserve sort order from aggregator
     if limit is not None:

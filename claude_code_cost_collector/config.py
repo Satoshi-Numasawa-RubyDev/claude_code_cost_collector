@@ -8,7 +8,7 @@ other configuration options.
 import json
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 
 class ConfigError(Exception):
@@ -168,14 +168,14 @@ def validate_config(config: Dict[str, Any]) -> None:
     valid_granularities = ["daily", "monthly", "project", "session", "all"]
     if config["default_granularity"] not in valid_granularities:
         raise ConfigError(
-            f"Invalid granularity '{config['default_granularity']}'. " f"Must be one of: {', '.join(valid_granularities)}"
+            f"Invalid granularity '{config['default_granularity']}'. Must be one of: {', '.join(valid_granularities)}"
         )
 
     # Validate output format values
     valid_formats = ["text", "json", "yaml", "csv"]
     if config["default_output_format"] not in valid_formats:
         raise ConfigError(
-            f"Invalid output format '{config['default_output_format']}'. " f"Must be one of: {', '.join(valid_formats)}"
+            f"Invalid output format '{config['default_output_format']}'. Must be one of: {', '.join(valid_formats)}"
         )
 
     # Validate log directory exists or can be created

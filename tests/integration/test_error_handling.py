@@ -5,12 +5,13 @@ These tests verify that the application handles various error conditions
 gracefully and provides appropriate error messages.
 """
 
-import pytest
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 
 class TestErrorHandling:

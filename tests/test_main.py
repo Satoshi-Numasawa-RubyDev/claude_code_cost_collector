@@ -2,16 +2,17 @@
 Tests for the main module.
 """
 
-import pytest
 import logging
-from unittest.mock import patch, Mock
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+from unittest.mock import Mock, patch
+
+import pytest
 
 from claude_code_cost_collector.main import (
+    filter_entries_by_date_range,
     main,
     setup_logging,
-    filter_entries_by_date_range,
 )
 from claude_code_cost_collector.models import ProcessedLogEntry
 
