@@ -422,7 +422,7 @@ class TestEndToEndIntegration:
 
         assert result.returncode == 0
         assert "claude-code-cost-collector" in result.stdout
-        assert "0.5.2" in result.stdout
+        assert "0.5.3" in result.stdout
 
 
 if __name__ == "__main__":

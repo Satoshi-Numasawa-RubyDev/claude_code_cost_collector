@@ -1,6 +1,6 @@
 [project]
 name = "claude-code-cost-collector"
-version = "0.5.2"
+version = "0.5.3"
 description = "A command-line tool for aggregating and displaying costs associated with Claude API usage"
 readme = "README.md"
 license = "Apache-2.0"
@@ -65,4 +65,4 @@ dev = [
 ]
 
 [project.urls]
-Repository = "https://github.com/Satoshi-Numasawa/claude_code_cost_collector"
+Repository = "https://github.com/Satoshi-Numasawa-RubyDev/claude_code_cost_collector"
