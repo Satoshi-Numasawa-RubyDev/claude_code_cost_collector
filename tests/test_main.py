@@ -385,6 +385,108 @@ class TestMainFunction:
 
         assert result == 1
 
+    @patch("claude_code_cost_collector.main.format_data")
+    @patch("claude_code_cost_collector.main.aggregate_data")
+    @patch("claude_code_cost_collector.main.parse_multiple_log_files")
+    @patch("claude_code_cost_collector.main.collect_log_files")
+    @patch("claude_code_cost_collector.main.validate_config")
+    @patch("claude_code_cost_collector.main.load_config")
+    @patch("claude_code_cost_collector.main.parse_arguments")
+    def test_main_with_new_sort_interface(
+        self,
+        mock_parse_args,
+        mock_load,
+        mock_validate,
+        mock_collect,
+        mock_parse_files,
+        mock_aggregate,
+        mock_format,
+        sample_log_entry,
+        mock_args,
+    ):
+        """Test main function processes new sort arguments correctly."""
+        from pathlib import Path
+
+        mock_args.sort = "desc"  # New interface
+        mock_args.sort_field = "date"  # New interface
+        mock_args.all_data = True
+        mock_args.timezone = None
+        mock_args.currency = None
+        mock_args.exchange_rate_api_key = None
+        mock_args.limit = None
+        mock_args.debug = False
+
+        mock_parse_args.return_value = mock_args
+        mock_load.return_value = {}
+        mock_collect.return_value = [Path("/test/log1.json")]
+        mock_parse_files.return_value = [sample_log_entry]
+        mock_aggregate.return_value = {"2025-05-09": {"total_cost_usd": 0.01}}
+        mock_format.return_value = "formatted output"
+
+        result = main()
+
+        assert result == 0
+
+        # Verify that new sort arguments are passed correctly to aggregate_data
+        mock_aggregate.assert_called_once()
+        args, kwargs = mock_aggregate.call_args
+        assert kwargs["sort_by"] == "date"
+        assert kwargs["sort_desc"] is True  # desc = True
+
+        # Verify that new sort arguments are passed correctly to format_data
+        mock_format.assert_called_once()
+        args, kwargs = mock_format.call_args
+        assert kwargs["sort_by"] == "date"
+        assert kwargs["sort_desc"] is True
+
+    @patch("claude_code_cost_collector.main.format_data")
+    @patch("claude_code_cost_collector.main.aggregate_data")
+    @patch("claude_code_cost_collector.main.parse_multiple_log_files")
+    @patch("claude_code_cost_collector.main.collect_log_files")
+    @patch("claude_code_cost_collector.main.validate_config")
+    @patch("claude_code_cost_collector.main.load_config")
+    @patch("claude_code_cost_collector.main.parse_arguments")
+    def test_main_with_sort_field_none(
+        self,
+        mock_parse_args,
+        mock_load,
+        mock_validate,
+        mock_collect,
+        mock_parse_files,
+        mock_aggregate,
+        mock_format,
+        sample_log_entry,
+        mock_args,
+    ):
+        """Test main function when sort_field is None."""
+        from pathlib import Path
+
+        mock_args.sort = "asc"  # Specified
+        mock_args.sort_field = None  # Not specified
+        mock_args.all_data = True
+        mock_args.timezone = None
+        mock_args.currency = None
+        mock_args.exchange_rate_api_key = None
+        mock_args.limit = None
+        mock_args.debug = False
+
+        mock_parse_args.return_value = mock_args
+        mock_load.return_value = {}
+        mock_collect.return_value = [Path("/test/log1.json")]
+        mock_parse_files.return_value = [sample_log_entry]
+        mock_aggregate.return_value = {"2025-05-09": {"total_cost_usd": 0.01}}
+        mock_format.return_value = "formatted output"
+
+        result = main()
+
+        assert result == 0
+
+        # Verify that None sort_field is handled correctly
+        mock_aggregate.assert_called_once()
+        args, kwargs = mock_aggregate.call_args
+        assert kwargs["sort_by"] is None
+        assert kwargs["sort_desc"] is False  # asc = False
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

@@ -323,8 +323,8 @@ class TestParseArguments:
             mock_path.return_value.expanduser.return_value.is_dir.return_value = True
             mock_path.return_value.expanduser.return_value.resolve.return_value = Path("/mocked/path")
 
-            # Test all valid sort choices
-            valid_sorts = ["input", "output", "total", "cost"]
+            # Test all valid sort order choices
+            valid_sorts = ["asc", "desc"]
             for sort_choice in valid_sorts:
                 args = parse_arguments(["--sort", sort_choice])
                 assert args.sort == sort_choice
@@ -334,42 +334,100 @@ class TestParseArguments:
         with pytest.raises(SystemExit):
             parse_arguments(["--sort", "invalid"])
 
-    def test_sort_desc_argument(self):
-        """Test that sort-desc argument works."""
+    def test_sort_field_argument_choices(self):
+        """Test that sort-field argument accepts valid choices."""
         with patch("claude_code_cost_collector.cli.Path") as mock_path:
             mock_path.return_value.expanduser.return_value.exists.return_value = True
             mock_path.return_value.expanduser.return_value.is_dir.return_value = True
             mock_path.return_value.expanduser.return_value.resolve.return_value = Path("/mocked/path")
 
-            # Test without sort-desc
+            # Test all valid sort field choices
+            valid_fields = ["input", "output", "total", "cost", "date"]
+            for field_choice in valid_fields:
+                args = parse_arguments(["--sort-field", field_choice])
+                assert args.sort_field == field_choice
+
+    def test_sort_field_argument_invalid_choice(self):
+        """Test that sort-field argument rejects invalid choices."""
+        with pytest.raises(SystemExit):
+            parse_arguments(["--sort-field", "invalid"])
+
+    def test_sort_order_argument(self):
+        """Test that sort argument works for order specification."""
+        with patch("claude_code_cost_collector.cli.Path") as mock_path:
+            mock_path.return_value.expanduser.return_value.exists.return_value = True
+            mock_path.return_value.expanduser.return_value.is_dir.return_value = True
+            mock_path.return_value.expanduser.return_value.resolve.return_value = Path("/mocked/path")
+
+            # Test without sort argument (should use default)
             args = parse_arguments([])
-            assert args.sort_desc is False
+            assert args.sort == "desc"
 
-            # Test with sort-desc
-            args = parse_arguments(["--sort-desc"])
-            assert args.sort_desc is True
+            # Test with asc sort
+            args = parse_arguments(["--sort", "asc"])
+            assert args.sort == "asc"
 
-    def test_sort_with_sort_desc(self):
-        """Test combining sort and sort-desc arguments."""
+            # Test with desc sort
+            args = parse_arguments(["--sort", "desc"])
+            assert args.sort == "desc"
+
+    def test_sort_with_sort_field(self):
+        """Test combining sort and sort-field arguments."""
         with patch("claude_code_cost_collector.cli.Path") as mock_path:
             mock_path.return_value.expanduser.return_value.exists.return_value = True
             mock_path.return_value.expanduser.return_value.is_dir.return_value = True
             mock_path.return_value.expanduser.return_value.resolve.return_value = Path("/mocked/path")
 
-            args = parse_arguments(["--sort", "cost", "--sort-desc"])
-            assert args.sort == "cost"
-            assert args.sort_desc is True
+            args = parse_arguments(["--sort", "desc", "--sort-field", "cost"])
+            assert args.sort == "desc"
+            assert args.sort_field == "cost"
 
-    def test_sort_argument_default_none(self):
-        """Test that sort argument defaults to None."""
+    def test_sort_arguments_defaults(self):
+        """Test that sort arguments use correct defaults."""
         with patch("claude_code_cost_collector.cli.Path") as mock_path:
             mock_path.return_value.expanduser.return_value.exists.return_value = True
             mock_path.return_value.expanduser.return_value.is_dir.return_value = True
             mock_path.return_value.expanduser.return_value.resolve.return_value = Path("/mocked/path")
 
             args = parse_arguments([])
-            assert args.sort is None
-            assert args.sort_desc is False
+            assert args.sort == "desc"  # Default is now desc
+            assert args.sort_field is None  # Still None by default
+
+    def test_sort_only_specified(self):
+        """Test behavior when only --sort is specified."""
+        with patch("claude_code_cost_collector.cli.Path") as mock_path:
+            mock_path.return_value.expanduser.return_value.exists.return_value = True
+            mock_path.return_value.expanduser.return_value.is_dir.return_value = True
+            mock_path.return_value.expanduser.return_value.resolve.return_value = Path("/mocked/path")
+
+            args = parse_arguments(["--sort", "asc"])
+            assert args.sort == "asc"
+            assert args.sort_field is None  # Should remain None
+
+    def test_sort_field_only_specified(self):
+        """Test behavior when only --sort-field is specified."""
+        with patch("claude_code_cost_collector.cli.Path") as mock_path:
+            mock_path.return_value.expanduser.return_value.exists.return_value = True
+            mock_path.return_value.expanduser.return_value.is_dir.return_value = True
+            mock_path.return_value.expanduser.return_value.resolve.return_value = Path("/mocked/path")
+
+            args = parse_arguments(["--sort-field", "cost"])
+            assert args.sort == "desc"  # Should use default
+            assert args.sort_field == "cost"
+
+    def test_help_message_includes_new_options(self):
+        """Test that help message includes new sort options."""
+        parser = create_parser()
+        help_text = parser.format_help()
+
+        # Check that new options are mentioned in help
+        assert "--sort ORDER" in help_text or "--sort" in help_text
+        assert "--sort-field FIELD" in help_text or "--sort-field" in help_text
+        assert "asc" in help_text and "desc" in help_text
+        assert "date" in help_text  # New date field option
+
+        # Check that old option is not mentioned
+        assert "--sort-desc" not in help_text
 
 
 if __name__ == "__main__":

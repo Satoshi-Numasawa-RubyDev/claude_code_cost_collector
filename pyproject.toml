@@ -1,6 +1,6 @@
 [project]
 name = "claude-code-cost-collector"
-version = "0.5.3"
+version = "1.0.0"
 description = "A command-line tool for aggregating and displaying costs associated with Claude API usage"
 readme = "README.md"
 license = "Apache-2.0"

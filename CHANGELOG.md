@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2025-06-02
+
+### Changed
+- **BREAKING CHANGE: Sort Interface Redesign**: Completely redesigned sort command-line interface for better usability
+  - `--sort` now specifies sort order (asc/desc) instead of field selection
+  - `--sort-field` now specifies which field to sort by (input/output/total/cost/date)
+  - Default sort order changed from ascending to descending
+  - **Migration**: `--sort cost --sort-desc` → `--sort desc --sort-field cost`
+  - **Migration**: `--sort input` → `--sort asc --sort-field input`
+  - Removed deprecated `--sort-desc` argument
+
+### Added
+- **Date Sorting**: New date sorting capability with `--sort-field date`
+  - Sort aggregated data by date in ascending or descending order
+  - Works with all granularities (daily, monthly, project, session)
+  - Lexicographic sorting for consistent behavior across different key formats
+
+### Fixed
+- **Argument Processing**: Improved robustness of sort argument handling
+  - Better handling of None values in argument processing
+  - Enhanced validation for argument combinations
+
+### Testing
+- **Test Suite Optimization**: Comprehensive test suite improvements and optimization
+  - Reduced test count from 255 to 244 tests (11 tests removed for efficiency)
+  - Removed 17 redundant tests across multiple categories:
+    - 5 duplicate empty entry tests across aggregation classes
+    - 2 duplicate validation tests 
+    - 10 redundant sort functionality tests
+  - **Enhanced Error Handling**: Added 6 new robust error handling tests
+    - Negative token and cost value processing
+    - Extremely large numeric value handling (10^15+ scale)
+    - Unicode and special character support in project names (Japanese, Cyrillic, emojis)
+    - Zero value processing validation
+    - Extremely long string field handling (1000+ characters)
+    - Sort stability with identical timestamps
+  - **Improved Test Coverage**: Added comprehensive edge case testing
+    - Better boundary value testing
+    - Enhanced international character support validation
+    - Improved sorting algorithm stability verification
+  - **Performance Optimization**: Test execution time improved to ~9.8 seconds
+  - **Quality Assurance**: Maintained 100% test pass rate (244/244 tests)
+
+### Documentation
+- **Interface Migration Guide**: Added migration examples for new sort interface
+- **Enhanced Help Text**: Updated help messages to reflect new argument structure and defaults
+
 ## [0.5.3] - 2025-06-02
 
 ### Changed

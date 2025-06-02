@@ -168,19 +168,21 @@ def create_parser() -> argparse.ArgumentParser:
         metavar="N",
     )
 
-    # Sort option
-    parser.add_argument(
-        "--sort",
-        choices=["input", "output", "total", "cost"],
-        help="Sort results by specified field (input/output tokens, total tokens, or cost)",
-        metavar="FIELD",
-    )
-
     # Sort order option
     parser.add_argument(
-        "--sort-desc",
-        action="store_true",
-        help="Sort in descending order (default is ascending)",
+        "--sort",
+        choices=["asc", "desc"],
+        default="desc",
+        help="Sort order: ascending or descending (default: %(default)s)",
+        metavar="ORDER",
+    )
+
+    # Sort field option
+    parser.add_argument(
+        "--sort-field",
+        choices=["input", "output", "total", "cost", "date"],
+        help="Sort results by specified field (input/output tokens, total tokens, cost, or date)",
+        metavar="FIELD",
     )
 
     return parser
