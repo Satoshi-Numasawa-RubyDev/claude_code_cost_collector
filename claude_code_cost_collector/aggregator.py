@@ -423,9 +423,12 @@ def _sort_aggregated_data(data: AggregatedData, sort_by: str, sort_desc: bool = 
         "output": "total_output_tokens",
         "total": "total_tokens",
         "cost": None,  # Will be determined based on available cost fields
+        "date": None,  # Special case: sort by key (date string)
     }
 
     field_name = field_mapping.get(sort_by)
+
+    # Handle special cases
     if field_name is None and sort_by == "cost":
         # For cost, prefer converted cost if available, otherwise use USD cost
         sample_entry = next(iter(data.values()))
@@ -433,6 +436,17 @@ def _sort_aggregated_data(data: AggregatedData, sort_by: str, sort_desc: bool = 
             field_name = "total_converted_cost"
         else:
             field_name = "total_cost_usd"
+    elif field_name is None and sort_by == "date":
+        # For date, sort by key (date string) directly
+        logger.debug(f"Sorting data by date key (desc={sort_desc})")
+        try:
+            sorted_items = sorted(data.items(), key=lambda item: item[0], reverse=sort_desc)
+            result = dict(sorted_items)
+            logger.info(f"Sorted {len(result)} items by date")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to sort data by date: {e}")
+            return data
     elif field_name is None:
         logger.warning(f"Invalid sort field: {sort_by}. Returning unsorted data.")
         return data

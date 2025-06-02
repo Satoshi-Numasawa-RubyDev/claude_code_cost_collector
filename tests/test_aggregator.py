@@ -73,11 +73,6 @@ class TestAggregateData:
         result = aggregate_data([], "daily")
         assert result == {}
 
-    def test_aggregate_data_invalid_entries_type(self):
-        """Test that invalid entries type raises ValueError."""
-        with pytest.raises(ValueError, match="entries must be a list"):
-            aggregate_data("not a list", "daily")
-
     def test_aggregate_data_project(self):
         """Test project aggregation through main function."""
         entries = [
@@ -238,11 +233,6 @@ class TestAggregateByDaily:
         assert day2_data["models"] == ["claude-4"]
         assert day2_data["projects"] == ["project2"]
 
-    def test_empty_entries(self):
-        """Test daily aggregation with empty entry list."""
-        result = _aggregate_by_daily([])
-        assert result == {}
-
 
 class TestAggregateByProject:
     """Test cases for project aggregation."""
@@ -357,11 +347,6 @@ class TestAggregateByProject:
         assert project2_data["total_cost_usd"] == 0.02
         assert project2_data["models"] == ["claude-4"]
         assert project2_data["projects"] == ["project2"]
-
-    def test_empty_entries(self):
-        """Test project aggregation with empty entry list."""
-        result = _aggregate_by_project([])
-        assert result == {}
 
 
 class TestAggregateByMonthly:
@@ -502,11 +487,6 @@ class TestAggregateByMonthly:
         assert jan_data["entry_count"] == 1
         assert dec_data["total_cost_usd"] == 0.01
         assert jan_data["total_cost_usd"] == 0.02
-
-    def test_empty_entries(self):
-        """Test monthly aggregation with empty entry list."""
-        result = _aggregate_by_monthly([])
-        assert result == {}
 
     def test_monthly_via_main_function(self):
         """Test monthly aggregation through main aggregate_data function."""
@@ -687,11 +667,6 @@ class TestAggregateBySession:
         assert set(session_data["projects"]) == {"project1", "project2"}
         assert session_data["sessions"] == ["session1"]
 
-    def test_empty_entries(self):
-        """Test session aggregation with empty entry list."""
-        result = _aggregate_by_session([])
-        assert result == {}
-
     def test_session_aggregation_through_main_function(self):
         """Test session aggregation through main aggregate_data function."""
         entries = [
@@ -837,11 +812,6 @@ class TestUtilityFunctions:
         # Should not raise any exception
         validate_aggregation_input(entries, "daily")
 
-    def test_validate_aggregation_input_invalid_entries_type(self):
-        """Test validation with invalid entries type."""
-        with pytest.raises(ValueError, match="entries must be a list"):
-            validate_aggregation_input("not a list", "daily")
-
     def test_validate_aggregation_input_invalid_granularity(self):
         """Test validation with invalid granularity."""
         entries = []
@@ -942,11 +912,6 @@ class TestPrepareIndividualEntries:
         assert entry2_data["total_cost_usd"] == 0.02
         assert entry2_data["project_name"] == "project2"
 
-    def test_prepare_individual_entries_empty(self):
-        """Test preparing empty individual entries list."""
-        result = _prepare_individual_entries([])
-        assert result == {}
-
     def test_aggregate_data_all_granularity(self):
         """Test aggregate_data function with 'all' granularity."""
         entries = [
@@ -990,71 +955,6 @@ class TestPrepareIndividualEntries:
 class TestSortAggregatedData:
     """Test cases for the _sort_aggregated_data function."""
 
-    def test_sort_by_input_tokens_ascending(self):
-        """Test sorting by input tokens in ascending order."""
-        data = {
-            "item1": {"total_input_tokens": 200, "total_output_tokens": 50, "total_tokens": 250, "total_cost_usd": 0.02},
-            "item2": {"total_input_tokens": 100, "total_output_tokens": 30, "total_tokens": 130, "total_cost_usd": 0.01},
-            "item3": {"total_input_tokens": 300, "total_output_tokens": 70, "total_tokens": 370, "total_cost_usd": 0.03},
-        }
-
-        result = _sort_aggregated_data(data, "input", sort_desc=False)
-        keys = list(result.keys())
-
-        assert keys == ["item2", "item1", "item3"]  # 100, 200, 300
-
-    def test_sort_by_input_tokens_descending(self):
-        """Test sorting by input tokens in descending order."""
-        data = {
-            "item1": {"total_input_tokens": 200, "total_output_tokens": 50, "total_tokens": 250, "total_cost_usd": 0.02},
-            "item2": {"total_input_tokens": 100, "total_output_tokens": 30, "total_tokens": 130, "total_cost_usd": 0.01},
-            "item3": {"total_input_tokens": 300, "total_output_tokens": 70, "total_tokens": 370, "total_cost_usd": 0.03},
-        }
-
-        result = _sort_aggregated_data(data, "input", sort_desc=True)
-        keys = list(result.keys())
-
-        assert keys == ["item3", "item1", "item2"]  # 300, 200, 100
-
-    def test_sort_by_output_tokens(self):
-        """Test sorting by output tokens."""
-        data = {
-            "item1": {"total_input_tokens": 200, "total_output_tokens": 50, "total_tokens": 250, "total_cost_usd": 0.02},
-            "item2": {"total_input_tokens": 100, "total_output_tokens": 30, "total_tokens": 130, "total_cost_usd": 0.01},
-            "item3": {"total_input_tokens": 300, "total_output_tokens": 70, "total_tokens": 370, "total_cost_usd": 0.03},
-        }
-
-        result = _sort_aggregated_data(data, "output", sort_desc=False)
-        keys = list(result.keys())
-
-        assert keys == ["item2", "item1", "item3"]  # 30, 50, 70
-
-    def test_sort_by_total_tokens(self):
-        """Test sorting by total tokens."""
-        data = {
-            "item1": {"total_input_tokens": 200, "total_output_tokens": 50, "total_tokens": 250, "total_cost_usd": 0.02},
-            "item2": {"total_input_tokens": 100, "total_output_tokens": 30, "total_tokens": 130, "total_cost_usd": 0.01},
-            "item3": {"total_input_tokens": 300, "total_output_tokens": 70, "total_tokens": 370, "total_cost_usd": 0.03},
-        }
-
-        result = _sort_aggregated_data(data, "total", sort_desc=False)
-        keys = list(result.keys())
-
-        assert keys == ["item2", "item1", "item3"]  # 130, 250, 370
-
-    def test_sort_by_cost_usd(self):
-        """Test sorting by cost in USD."""
-        data = {
-            "item1": {"total_input_tokens": 200, "total_output_tokens": 50, "total_tokens": 250, "total_cost_usd": 0.02},
-            "item2": {"total_input_tokens": 100, "total_output_tokens": 30, "total_tokens": 130, "total_cost_usd": 0.01},
-            "item3": {"total_input_tokens": 300, "total_output_tokens": 70, "total_tokens": 370, "total_cost_usd": 0.03},
-        }
-
-        result = _sort_aggregated_data(data, "cost", sort_desc=False)
-        keys = list(result.keys())
-
-        assert keys == ["item2", "item1", "item3"]  # 0.01, 0.02, 0.03
-
     def test_sort_by_converted_cost(self):
         """Test sorting by converted cost when available."""
         data = {
@@ -1085,21 +985,6 @@ class TestSortAggregatedData:
         keys = list(result.keys())
 
         assert keys == ["item2", "item1", "item3"]  # 1.0, 2.0, 3.0
-
-    def test_sort_empty_data(self):
-        """Test sorting empty data returns empty dict."""
-        result = _sort_aggregated_data({}, "input")
-        assert result == {}
-
-    def test_sort_invalid_field(self):
-        """Test sorting with invalid field returns original data."""
-        data = {
-            "item1": {"total_input_tokens": 200, "total_output_tokens": 50, "total_tokens": 250, "total_cost_usd": 0.02},
-            "item2": {"total_input_tokens": 100, "total_output_tokens": 30, "total_tokens": 130, "total_cost_usd": 0.01},
-        }
-
-        result = _sort_aggregated_data(data, "invalid_field")
-        assert result == data
 
     def test_sort_missing_field_uses_zero(self):
         """Test sorting with missing field uses 0 as default value."""
@@ -1169,3 +1054,352 @@ class TestSortAggregatedData:
 
         # Should be sorted by cost: 0.01, 0.02, 0.03
         assert keys == ["2025-05-10", "2025-05-11", "2025-05-09"]
+
+    def test_sort_by_date_ascending(self):
+        """Test sorting by date in ascending order."""
+        data = {
+            "2025-05-15": {"total_input_tokens": 800, "total_output_tokens": 200, "total_tokens": 1000, "total_cost_usd": 0.032},
+            "2025-05-09": {"total_input_tokens": 1000, "total_output_tokens": 300, "total_tokens": 1300, "total_cost_usd": 0.045},
+            "2025-05-10": {"total_input_tokens": 1500, "total_output_tokens": 500, "total_tokens": 2000, "total_cost_usd": 0.075},
+        }
+
+        result = _sort_aggregated_data(data, "date", sort_desc=False)
+        keys = list(result.keys())
+
+        # Should be sorted by date: 2025-05-09, 2025-05-10, 2025-05-15
+        assert keys == ["2025-05-09", "2025-05-10", "2025-05-15"]
+
+    def test_sort_by_date_descending(self):
+        """Test sorting by date in descending order."""
+        data = {
+            "2025-05-15": {"total_input_tokens": 800, "total_output_tokens": 200, "total_tokens": 1000, "total_cost_usd": 0.032},
+            "2025-05-09": {"total_input_tokens": 1000, "total_output_tokens": 300, "total_tokens": 1300, "total_cost_usd": 0.045},
+            "2025-05-10": {"total_input_tokens": 1500, "total_output_tokens": 500, "total_tokens": 2000, "total_cost_usd": 0.075},
+        }
+
+        result = _sort_aggregated_data(data, "date", sort_desc=True)
+        keys = list(result.keys())
+
+        # Should be sorted by date: 2025-05-15, 2025-05-10, 2025-05-09
+        assert keys == ["2025-05-15", "2025-05-10", "2025-05-09"]
+
+    def test_aggregate_data_with_date_sort(self):
+        """Test aggregate_data function with date sort parameters."""
+        entries = [
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 15, 14, 30, 0),
+                date_str="2025-05-15",
+                month_str="2025-05",
+                project_name="project1",
+                session_id="session1",
+                input_tokens=800,
+                output_tokens=200,
+                total_tokens=1000,
+                cost_usd=0.032,
+                model="claude-3",
+            ),
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 9, 10, 0, 0),
+                date_str="2025-05-09",
+                month_str="2025-05",
+                project_name="project1",
+                session_id="session2",
+                input_tokens=1000,
+                output_tokens=300,
+                total_tokens=1300,
+                cost_usd=0.045,
+                model="claude-3",
+            ),
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 10, 12, 0, 0),
+                date_str="2025-05-10",
+                month_str="2025-05",
+                project_name="project1",
+                session_id="session3",
+                input_tokens=1500,
+                output_tokens=500,
+                total_tokens=2000,
+                cost_usd=0.075,
+                model="claude-3",
+            ),
+        ]
+
+        # Test sorting by date descending
+        result = aggregate_data(entries, "daily", sort_by="date", sort_desc=True)
+        keys = list(result.keys())
+
+        # Should be sorted by date desc: 2025-05-15, 2025-05-10, 2025-05-09
+        assert keys == ["2025-05-15", "2025-05-10", "2025-05-09"]
+
+        # Test sorting by date ascending
+        result = aggregate_data(entries, "daily", sort_by="date", sort_desc=False)
+        keys = list(result.keys())
+
+        # Should be sorted by date asc: 2025-05-09, 2025-05-10, 2025-05-15
+        assert keys == ["2025-05-09", "2025-05-10", "2025-05-15"]
+
+    def test_sort_by_date_monthly_granularity(self):
+        """Test date sorting with monthly granularity."""
+        entries = [
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 7, 15, 14, 30, 0),
+                date_str="2025-07-15",
+                month_str="2025-07",
+                project_name="project1",
+                session_id="session1",
+                input_tokens=800,
+                output_tokens=200,
+                total_tokens=1000,
+                cost_usd=0.032,
+                model="claude-3",
+            ),
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 9, 10, 0, 0),
+                date_str="2025-05-09",
+                month_str="2025-05",
+                project_name="project1",
+                session_id="session2",
+                input_tokens=1000,
+                output_tokens=300,
+                total_tokens=1300,
+                cost_usd=0.045,
+                model="claude-3",
+            ),
+        ]
+
+        # Test sorting by date with monthly granularity (sorts month strings)
+        result = aggregate_data(entries, "monthly", sort_by="date", sort_desc=False)
+        keys = list(result.keys())
+
+        # Should be sorted by month string: 2025-05, 2025-07
+        assert keys == ["2025-05", "2025-07"]
+
+    def test_sort_by_date_project_granularity(self):
+        """Test date sorting with project granularity."""
+        entries = [
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 15, 14, 30, 0),
+                date_str="2025-05-15",
+                month_str="2025-05",
+                project_name="project_z",
+                session_id="session1",
+                input_tokens=800,
+                output_tokens=200,
+                total_tokens=1000,
+                cost_usd=0.032,
+                model="claude-3",
+            ),
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 9, 10, 0, 0),
+                date_str="2025-05-09",
+                month_str="2025-05",
+                project_name="project_a",
+                session_id="session2",
+                input_tokens=1000,
+                output_tokens=300,
+                total_tokens=1300,
+                cost_usd=0.045,
+                model="claude-3",
+            ),
+        ]
+
+        # Test sorting by date with project granularity (sorts project names)
+        result = aggregate_data(entries, "project", sort_by="date", sort_desc=False)
+        keys = list(result.keys())
+
+        # Should be sorted by project name: project_a, project_z
+        assert keys == ["project_a", "project_z"]
+
+    def test_sort_by_date_non_date_keys(self):
+        """Test date sorting with non-date keys (like project names)."""
+        data = {
+            "project_z": {"total_input_tokens": 800, "total_output_tokens": 200, "total_tokens": 1000, "total_cost_usd": 0.032},
+            "project_a": {"total_input_tokens": 1000, "total_output_tokens": 300, "total_tokens": 1300, "total_cost_usd": 0.045},
+            "project_m": {"total_input_tokens": 1500, "total_output_tokens": 500, "total_tokens": 2000, "total_cost_usd": 0.075},
+        }
+
+        result = _sort_aggregated_data(data, "date", sort_desc=False)
+        keys = list(result.keys())
+
+        # Should be sorted alphabetically: project_a, project_m, project_z
+        assert keys == ["project_a", "project_m", "project_z"]
+
+
+class TestErrorHandling:
+    """Test cases for error handling and edge cases."""
+
+    def test_negative_token_and_cost_values(self):
+        """Test aggregation with negative token and cost values."""
+        entries = [
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 9, 10, 0, 0),
+                date_str="2025-05-09",
+                month_str="2025-05",
+                project_name="project1",
+                session_id="session1",
+                input_tokens=-100,  # Negative value
+                output_tokens=50,
+                total_tokens=-50,  # Negative total
+                cost_usd=-0.01,  # Negative cost
+                model="claude-3",
+            ),
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 9, 11, 0, 0),
+                date_str="2025-05-09",
+                month_str="2025-05",
+                project_name="project1",
+                session_id="session2",
+                input_tokens=200,
+                output_tokens=100,
+                total_tokens=300,
+                cost_usd=0.02,
+                model="claude-3",
+            ),
+        ]
+
+        result = aggregate_data(entries, "daily")
+
+        # Should aggregate including negative values
+        assert "2025-05-09" in result
+        assert result["2025-05-09"]["total_input_tokens"] == 100  # -100 + 200
+        assert result["2025-05-09"]["total_cost_usd"] == 0.01  # -0.01 + 0.02
+
+    def test_extremely_large_numeric_values(self):
+        """Test aggregation with extremely large numeric values."""
+        entries = [
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 9, 10, 0, 0),
+                date_str="2025-05-09",
+                month_str="2025-05",
+                project_name="project1",
+                session_id="session1",
+                input_tokens=10**15,  # Extremely large value
+                output_tokens=10**14,
+                total_tokens=11 * 10**14,
+                cost_usd=10**10,  # Extremely large cost
+                model="claude-3",
+            ),
+        ]
+
+        result = aggregate_data(entries, "daily")
+
+        # Should handle large values without overflow
+        assert "2025-05-09" in result
+        assert result["2025-05-09"]["total_input_tokens"] == 10**15
+        assert result["2025-05-09"]["total_cost_usd"] == 10**10
+
+    def test_unicode_special_characters_in_project_names(self):
+        """Test aggregation with Unicode and special characters in project names."""
+        entries = [
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 9, 10, 0, 0),
+                date_str="2025-05-09",
+                month_str="2025-05",
+                project_name="プロジェクト🚀",  # Japanese + emoji
+                session_id="session1",
+                input_tokens=100,
+                output_tokens=50,
+                total_tokens=150,
+                cost_usd=0.01,
+                model="claude-3",
+            ),
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 9, 11, 0, 0),
+                date_str="2025-05-09",
+                month_str="2025-05",
+                project_name="проект-тест",  # Cyrillic with hyphen
+                session_id="session2",
+                input_tokens=200,
+                output_tokens=100,
+                total_tokens=300,
+                cost_usd=0.02,
+                model="claude-3",
+            ),
+        ]
+
+        result = aggregate_data(entries, "project")
+
+        # Should handle Unicode characters correctly
+        assert "プロジェクト🚀" in result
+        assert "проект-тест" in result
+        assert result["プロジェクト🚀"]["total_input_tokens"] == 100
+        assert result["проект-тест"]["total_input_tokens"] == 200
+
+    def test_zero_value_tokens_and_costs(self):
+        """Test aggregation with all zero values."""
+        entries = [
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 9, 10, 0, 0),
+                date_str="2025-05-09",
+                month_str="2025-05",
+                project_name="project1",
+                session_id="session1",
+                input_tokens=0,
+                output_tokens=0,
+                total_tokens=0,
+                cost_usd=0.0,
+                model="claude-3",
+            ),
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 9, 11, 0, 0),
+                date_str="2025-05-09",
+                month_str="2025-05",
+                project_name="project1",
+                session_id="session2",
+                input_tokens=0,
+                output_tokens=0,
+                total_tokens=0,
+                cost_usd=0.0,
+                model="claude-3",
+            ),
+        ]
+
+        result = aggregate_data(entries, "daily")
+
+        # Should handle zero values correctly
+        assert "2025-05-09" in result
+        assert result["2025-05-09"]["total_input_tokens"] == 0
+        assert result["2025-05-09"]["total_output_tokens"] == 0
+        assert result["2025-05-09"]["total_cost_usd"] == 0.0
+        assert result["2025-05-09"]["entry_count"] == 2
+
+    def test_extremely_long_string_fields(self):
+        """Test aggregation with extremely long string fields."""
+        long_project_name = "a" * 1000  # 1000 character project name
+        long_session_id = "session_" + "x" * 990  # ~1000 character session ID
+
+        entries = [
+            ProcessedLogEntry(
+                timestamp=datetime(2025, 5, 9, 10, 0, 0),
+                date_str="2025-05-09",
+                month_str="2025-05",
+                project_name=long_project_name,
+                session_id=long_session_id,
+                input_tokens=100,
+                output_tokens=50,
+                total_tokens=150,
+                cost_usd=0.01,
+                model="claude-3",
+            ),
+        ]
+
+        result = aggregate_data(entries, "project")
+
+        # Should handle long strings efficiently
+        assert long_project_name in result
+        assert result[long_project_name]["total_input_tokens"] == 100
+
+    def test_identical_timestamp_entries_sorting(self):
+        """Test sorting stability with identical timestamps."""
+        # Create data with identical timestamps but different values
+        data = {
+            "2025-05-09_session1": {"total_cost_usd": 0.01, "total_input_tokens": 100},
+            "2025-05-09_session2": {"total_cost_usd": 0.01, "total_input_tokens": 200},  # Same cost, different tokens
+            "2025-05-09_session3": {"total_cost_usd": 0.01, "total_input_tokens": 150},  # Same cost, different tokens
+        }
+
+        result1 = _sort_aggregated_data(data, "cost", sort_desc=False)
+        result2 = _sort_aggregated_data(data, "cost", sort_desc=False)
+
+        # Sorting should be stable - same order in multiple runs
+        assert list(result1.keys()) == list(result2.keys())

@@ -195,8 +195,8 @@ def main() -> int:
                 granularity=args.granularity,
                 exchange_rate=exchange_rate,
                 target_currency=target_currency,
-                sort_by=args.sort,
-                sort_desc=args.sort_desc,
+                sort_by=args.sort_field,
+                sort_desc=(args.sort == "desc"),
             )
             if args.debug:
                 logger.info("Data aggregation completed")
@@ -215,8 +215,8 @@ def main() -> int:
                 granularity=args.granularity,
                 target_currency=target_currency,
                 limit=args.limit,
-                sort_by=args.sort,
-                sort_desc=args.sort_desc,
+                sort_by=args.sort_field,
+                sort_desc=(args.sort == "desc"),
             )
 
             # Output results
