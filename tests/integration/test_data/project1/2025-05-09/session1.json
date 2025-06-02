@@ -1,0 +1,31 @@
+{
+  "uuid": "test-uuid-1",
+  "parentUuid": "test-parent-1",
+  "sessionId": "session-1",
+  "timestamp": "2025-05-09T10:30:00.000Z",
+  "type": "assistant",
+  "cwd": "/Users/test/project1",
+  "originalCwd": "/Users/test/project1",
+  "userType": "external",
+  "version": "0.2.104",
+  "isSidechain": false,
+  "costUSD": 0.045,
+  "durationMs": 5000,
+  "message": {
+    "id": "msg_test_1",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-3-sonnet-20241022",
+    "content": ["Test response content"],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 1000,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 300
+    }
+  },
+  "isApiErrorMessage": false,
+  "model": "claude-3-sonnet-20241022"
+}

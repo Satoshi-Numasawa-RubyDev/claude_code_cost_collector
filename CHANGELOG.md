@@ -1,0 +1,207 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.5.2] - 2025-06-02
+
+### Added
+- **Package Metadata Enhancement**: Added repository URL to pyproject.toml
+  - Improved package discovery and maintenance by providing direct link to source code
+  - Enhanced user experience by enabling easy access to documentation and issue reporting
+  - Better integration with Python package ecosystem and tooling
+
+## [0.5.1] - 2025-06-01
+
+### Documentation
+- **README Screenshot Update**: Updated application screenshot with latest interface changes
+  - Refreshed visual documentation to reflect current UI state
+  - Improved user onboarding experience with up-to-date visual examples
+
+## [0.5.0] - 2025-06-01
+
+### Documentation
+- **Release Process Enhancement**: Comprehensive update to release workflow documentation
+  - Added detailed Git Flow with branch strategy (develop → release → main)
+  - Clarified step-by-step release procedures including pre-checks, version updates, testing, and merge process
+  - Improved maintainability and consistency of future releases
+  - Enhanced developer experience with clear documentation of branch operations and cleanup
+
+### Changed
+- **Version Bump**: Updated from 0.4.4 to 0.5.0 to reflect improved release process
+
+## [0.4.4] - 2025-05-31
+
+### Removed
+- **Code Cleanup**: Removed 5 unused functions to improve maintainability
+  - `detect_legacy_config_files()`, `suggest_config_migration()`, `migrate_legacy_config_file()` from config.py
+  - `get_cached_rate()`, `clear_cache()` from exchange.py
+  - Total reduction: 98 lines of unused code
+
+### Fixed
+- **Test Standardization**: Updated error message assertions to use English consistently
+  - Replaced Japanese error messages with English equivalents in test files
+  - Improved test maintainability and international compatibility
+- **Version Test Update**: Updated version test assertion from 0.1.0 to 0.4.4
+
+### Changed
+- **Code Quality**: Added setup.cfg for proper flake8 configuration
+  - Ensures 130-character line length limit is properly applied
+  - Improved development workflow consistency
+
+## [0.4.3] - 2025-05-31
+
+### Fixed
+- **バージョン統一**: `claude_code_cost_collector/__init__.py` のバージョンを 0.1.0 から 0.4.3 に更新
+  - `pyproject.toml` とバージョン番号を統一
+- **言語統一**: `__init__.py` 内の説明文を日本語から英語に変更
+  - プロジェクト全体の国際化対応の一環
+  - パッケージメタデータの一貫性向上
+
+### Documentation
+- **リリース手順の文書化**: `CLAUDE.md` にリリース作業手順を追加
+  - バージョン更新対象ファイルの明記
+  - 標準化されたリリースプロセスの確立
+
+## [0.4.0] - 2025-05-31
+
+### Changed
+- **プロジェクト名の最終化**: プロジェクト名を "claude-code-cost-analyzer-advanced" から "claude-code-cost-analyzer" に変更
+  - パッケージ管理の簡素化とユーザビリティ向上
+  - 一貫性のあるプロジェクト名でのリリース準備
+
+### Added
+- **ビルド・パッケージング支援**: 開発依存関係に build と twine を追加
+  - `build>=1.2.2.post1`: モダンなPythonパッケージビルドツール
+  - `twine>=6.1.0`: PyPI へのセキュアなパッケージアップロード
+
+### Technical Improvements
+- 依存関係管理の最適化とリリースプロセスの標準化
+- パッケージング環境の整備
+
+## [0.3.0] - 2025-05-31
+
+### Added
+- **ソート機能**: 包括的なデータソート機能を実装
+  - 日時、コスト、プロジェクト名による並び替え
+  - 昇順・降順の切り替え対応
+- **制限機能**: `--limit` オプションによる表示件数制限
+  - 適切な日時ソートと組み合わせた最新データ表示
+  - 全ての集計単位（daily, monthly, project, session, all）で利用可能
+  - JSON、YAML、CSV、テキスト形式全てに対応
+- **バージョン表示**: `--version` オプションでバージョン情報表示
+
+### Fixed
+- コード品質の改善とテスト信頼性の向上
+- プロジェクト名の統一（"Claude Code Cost Collector"に修正）
+- テストデータパスの汎用化
+
+### Documentation
+- 国際化対応でREADME.mdを英語に翻訳
+- Apache License 2.0の追加と包括的なCONTRIBUTING.mdの作成
+- ドキュメントの冗長部分削除とフォーマット修正
+
+### Technical Improvements
+- 結合テストでの`--limit`機能の包括的テスト追加
+- 型チェック（mypy）で全11ファイルの型安全性確認
+- コードフォーマット（black）とリンティング（flake8）の品質基準クリア
+
+### Example Usage
+```bash
+# 最新の5日分のデータを表示
+cccc --limit 5
+
+# コストの高いプロジェクト上位3つをJSON形式で表示
+cccc -g project --limit 3 -o json
+
+# バージョン確認
+cccc --version
+```
+
+## [0.2.0] - 2025-05-31
+
+### Added
+- **`--limit` オプション**: 出力される結果の件数を制限する機能（初期実装）
+- **`--version` オプション**: バージョン情報表示機能（初期実装）
+
+### Changed
+- **テストデータの一般化**: ユーザー固有のパスを汎用的な表記に変更
+- **コードフォーマット**: blackによる一貫したコードスタイルの適用
+- **コード品質向上**: flake8、mypyによる静的解析でのエラー解消
+
+## [0.1.0] - 2025-05-31
+
+### Added
+- **コア機能**: Claude API利用コスト集計・表示機能
+- **コマンドラインインターフェース**: argparseを使用した豊富なオプション
+  - `-d, --directory`: ログディレクトリ指定（デフォルト: `~/.claude/projects/`）
+  - `-g, --granularity`: 集計単位（daily, monthly, project, session, all）
+  - `-o, --output`: 出力形式（text, json, yaml, csv）
+  - `--start-date`, `--end-date`: 期間フィルタ
+  - `--config`: 設定ファイル指定
+
+- **集計機能**:
+  - 日次集計（デフォルト）
+  - 月次集計
+  - プロジェクト別集計
+  - セッション別集計
+  - 個別ログエントリ表示
+
+- **出力形式**:
+  - 整形済みテキストテーブル（デフォルト、richライブラリ使用）
+  - JSON形式
+  - YAML形式
+  - CSV形式
+
+- **通貨対応**:
+  - USD表示（基本）
+
+- **データ処理機能**:
+  - JSON ログファイルの再帰的収集
+  - ログデータパーサー（必須フィールド抽出、エラーハンドリング）
+  - プロジェクト名の自動決定（ディレクトリ構造ベース）
+  - タイムスタンプ変換とフィルタリング
+
+- **設定管理**:
+  - YAML設定ファイル対応
+  - 環境変数・コマンドライン引数の優先度制御
+
+- **テスト**:
+  - 包括的なユニットテスト（全モジュール対応）
+  - 結合テスト（46テストケース、エンドツーエンド検証）
+  - テストデータ（総コスト$0.241、総トークン6,900）
+
+- **開発支援**:
+  - 型注釈とmypy対応
+  - black、flake8、ruffによるコード品質管理
+  - プロジェクト構造の標準化
+
+### Technical Details
+- **Python**: 3.13以上
+- **依存関係**: requests, PyYAML, rich
+- **アーキテクチャ**: モジュラー設計（cli, collector, parser, aggregator, formatter, exchange, config）
+- **パッケージング**: setuptools、uvによる依存関係管理
+
+### Documentation
+- 包括的なREADME.md（インストール、使用方法、例）
+- 開発者ガイド（アーキテクチャ、テスト、コントリビューション）
+- 詳細なdocstring（全モジュール・関数）
+
+### Known Limitations
+- 現在、exchangerate-api.comのみ為替レートソースとして対応
+- 大量のログファイル処理時の性能最適化は今後の課題
+- Windowsでのパス処理は基本対応（詳細テストは未実施）
+
+### Example Usage
+```bash
+# 基本的な日次集計（テキスト形式）
+cccc
+
+# プロジェクト別、JSON出力
+cccc -g project -o json
+
+# 期間指定、月次集計、CSV出力
+cccc -g monthly --start-date 2025-05-01 --end-date 2025-05-31 -o csv
+```

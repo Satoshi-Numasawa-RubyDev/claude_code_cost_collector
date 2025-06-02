@@ -1,0 +1,31 @@
+{
+  "uuid": "test-uuid-3",
+  "parentUuid": "test-parent-3",
+  "sessionId": "session-3",
+  "timestamp": "2025-05-15T09:15:00.000Z",
+  "type": "assistant",
+  "cwd": "/Users/test/project2",
+  "originalCwd": "/Users/test/project2",
+  "userType": "external",
+  "version": "0.2.104",
+  "isSidechain": false,
+  "costUSD": 0.032,
+  "durationMs": 3200,
+  "message": {
+    "id": "msg_test_3",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-3-haiku-20240307",
+    "content": ["Test response content 3"],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 800,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 200
+    }
+  },
+  "isApiErrorMessage": false,
+  "model": "claude-3-haiku-20240307"
+}

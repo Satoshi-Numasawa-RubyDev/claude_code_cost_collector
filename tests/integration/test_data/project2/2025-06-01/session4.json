@@ -1,0 +1,31 @@
+{
+  "uuid": "test-uuid-4",
+  "parentUuid": "test-parent-4",
+  "sessionId": "session-4",
+  "timestamp": "2025-06-01T16:45:00.000Z",
+  "type": "assistant",
+  "cwd": "/Users/test/project2",
+  "originalCwd": "/Users/test/project2",
+  "userType": "external",
+  "version": "0.2.104",
+  "isSidechain": false,
+  "costUSD": 0.089,
+  "durationMs": 8900,
+  "message": {
+    "id": "msg_test_4",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-3-opus-20240229",
+    "content": ["Test response content 4"],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 2000,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 600
+    }
+  },
+  "isApiErrorMessage": false,
+  "model": "claude-3-opus-20240229"
+}
