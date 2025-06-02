@@ -33,6 +33,86 @@ bank/implement_steps.yaml
     - `uv run ruff format claude_code_cost_collector/ tests/` (import整理含む)
     - `uv run python -m mypy claude_code_cost_collector/`
 
+## 機能削除・変更時の残置確認ルール
+機能削除や大幅な変更を行った場合は、以下の手順で残置がないか確認する:
+
+### 1. キーワード検索による残置確認
+削除・変更したキーワードをripgrepで全体検索し、残置がないか確認する:
+```bash
+# 削除した関数名やオプション名などを検索
+rg "削除したキーワード" --type py
+rg "削除したキーワード" --type md
+rg "削除したキーワード" .
+
+# アノテーションコメント内の関連記述も確認
+rg "TODO.*削除したキーワード|FIXME.*削除したキーワード" --type py
+
+# 例: --sort-desc オプションを削除した場合
+rg "sort-desc|sort_desc" --type py
+rg "sort-desc|sort_desc" --type md
+rg "sort-desc|sort_desc" .
+rg "TODO.*sort-desc|FIXME.*sort-desc" --type py
+```
+
+### 2. 確認対象
+- **ソースコード**: 関数名、変数名、引数名の残置
+- **テストコード**: 古いインターフェースを使用したテスト
+- **ドキュメント**: README.md, CONTRIBUTING.md, docs/, CHANGELOG.md
+- **設定ファイル例**: yaml, json, コメント内の例示
+- **CLIヘルプテキスト**: help出力の確認
+- **アノテーションコメント**: TODO/FIXME等で削除機能に言及している箇所
+
+### 3. 確認タイミング
+- 機能削除・変更の実装完了後
+- プルリクエスト作成前
+- リリース前の最終確認時
+
+### 4. 対応方針
+- **残置発見時**: 適切に更新または削除
+- **意図的残置**: コメントで理由を明記
+- **後方互換性**: 非推奨警告の実装検討
+
+## コメントアノテーション（TODO/FIXME等）のルール
+後で実装予定やバグ修正が必要な箇所には、標準的なアノテーションを使用して追跡可能にする:
+
+### 1. 使用するアノテーション
+```python
+# TODO: 実装予定のタスク
+# FIXME: 修正が必要なコード
+# NOTE: 重要な説明・注意事項
+# HACK: 一時的な解決策（後で改善すべき）
+# BUG: 既知の不具合
+# OPTIMIZE: パフォーマンス改善が可能な箇所
+```
+
+### 2. フォーマット規則
+```python
+# アノテーション(担当者): 説明 <日付: YYYY-MM-DD>
+# TODO(claude): add currency conversion support <2025-06-02>
+# FIXME(claude): handle edge case for empty data <2025-06-02>
+# NOTE(claude): this function assumes sorted input <2025-06-02>
+```
+
+### 3. 必須項目
+- **担当者**: 誰が追加したかを明記（claude, user, 等）
+- **説明**: 何をすべきか明確に記述
+- **日付**: いつ追加されたかを記録
+
+### 4. 管理ルール
+- **定期確認**: リリース前にアノテーション付きコメントを全て確認
+- **完了時**: 実装完了時はコメントを削除
+- **期限切れ**: 1ヶ月以上放置されたTODOは課題管理ツールに移行検討
+- **検索コマンド**: `rg "TODO|FIXME|HACK|BUG" --type py` で一覧表示
+
+### 5. 禁止事項
+- 曖昧な説明（「あとで直す」「改善予定」等）
+- 担当者なしのTODO
+- 複雑なタスクの単一TODOコメント（課題管理ツールを使用）
+
+### 6. 例外
+- 短期間（1週間以内）の作業では簡略化可能
+- プロトタイプやPoCでは緩い運用も許可
+
 
 
 # テスト関連

@@ -273,6 +273,7 @@ stats.sort_stats('cumulative').print_stats(10)
    ```python
    # cli.pyに新しいオプション追加
    parser.add_argument('--granularity', choices=['daily', 'monthly', 'project', 'session', 'custom', 'all'])
+   parser.add_argument('--sort-field', choices=['input', 'output', 'total', 'cost', 'date', 'custom'])
    ```
 
 3. **テストケースの追加**
@@ -346,7 +347,7 @@ class ExamplePlugin(OutputPlugin):
     "python.defaultInterpreterPath": ".venv/bin/python",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": false,
-    "python.linting.flake8Enabled": true,
+    "ruff.enable": true,
     "python.formatting.provider": "black",
     "python.testing.pytestEnabled": true,
     "python.testing.pytestArgs": ["tests"]
@@ -395,7 +396,8 @@ jobs:
     - name: Run linting
       run: |
         source .venv/bin/activate
-        ruff check .
+        ruff check claude_code_cost_collector/ tests/
+        ruff format --check claude_code_cost_collector/ tests/
         black --check .
         mypy claude_code_cost_collector/
 ```

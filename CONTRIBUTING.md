@@ -39,10 +39,11 @@ pip install -e ".[dev]"
 uv run python -m pytest
 
 # コードフォーマット
+uv run ruff format claude_code_cost_collector/ tests/
 uv run python -m black .
 
 # リンティング
-uv run python -m flake8
+uv run ruff check claude_code_cost_collector/ tests/
 
 # 型チェック
 uv run python -m mypy claude_code_cost_collector
@@ -103,7 +104,7 @@ uv run python -m pytest tests/integration/ -v
 ```
 feat: add sort functionality for cost analysis results
 
-Add --sort and --sort-desc options to enable sorting by input/output/total tokens and cost.
+Add --sort and --sort-field options to enable sorting by input/output/total tokens, cost, or date.
 This enhancement improves data analysis capabilities for users.
 ```
 
