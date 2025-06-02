@@ -10,7 +10,7 @@ Claude Code Cost Collector (CCCC) is a tool designed to provide transparency int
 
 The tool analyzes Claude CLI usage log files and aggregates costs across various dimensions (daily, monthly, per-project, per-session), displaying the results in user-friendly formats.
 
-<img width="1622" alt="スクリーンショット 2025-06-01 10 15 54" src="https://github.com/user-attachments/assets/c44db1ff-b912-473e-846e-e06dfc934116" />
+<img width="1622" alt="スクリーンショット 2025-06-01 10 15 54" src="https://github.com/user-attachments/assets/6f38e5e8-bf32-47b1-9385-e400225f2882" />
 
 
 
