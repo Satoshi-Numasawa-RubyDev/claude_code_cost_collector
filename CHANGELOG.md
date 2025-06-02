@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2025-06-02
+
+### Changed
+- **Repository URL Update**: Updated GitHub repository URL in pyproject.toml
+  - Reflects current repository location for better package discovery
+  - Ensures accurate source code references in package metadata
+
+### Added
+- **Development Branch Strategy**: Established develop branch as main development branch
+  - Enhanced development workflow with structured branch management
+  - Added branch strategy documentation to CLAUDE.md
+
 ## [0.5.2] - 2025-06-02
 
 ### Added
