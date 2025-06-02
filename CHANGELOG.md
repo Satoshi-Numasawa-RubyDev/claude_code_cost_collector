@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-06-02
+
+### Documentation
+- **Sort Interface Documentation Update**: Updated all documentation to reflect new sort interface
+  - Updated README.md examples to use `--sort desc --sort-field cost` format
+  - Updated CONTRIBUTING.md examples and development tool commands
+  - Updated docs/developer-guide.md with new interface examples
+  - Improved consistency across all documentation files
+
+### Added
+- **Development Best Practices**: Added comprehensive development rules to CLAUDE.md
+  - Feature deletion/modification residue checking rules with ripgrep commands
+  - Standardized comment annotation rules (TODO/FIXME/NOTE/HACK/BUG/OPTIMIZE)
+  - Unified date format `<YYYY-MM-DD>` for improved searchability
+  - Ownership requirement for all annotations with clear responsibility tracking
+
+### Changed
+- **Development Tools Documentation**: Updated all tool references from flake8 to ruff
+  - Updated VS Code settings recommendations
+  - Updated CI/CD pipeline examples
+  - Improved development workflow with unified formatting and linting
+
+### Technical Improvements
+- Enhanced development process consistency with standardized practices
+- Improved code maintainability through systematic annotation tracking
+- Better documentation searchability and maintenance procedures
+
 ## [1.0.1] - 2025-06-02
 
 ### Changed

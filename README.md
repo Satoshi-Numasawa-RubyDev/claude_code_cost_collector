@@ -35,7 +35,7 @@ The tool analyzes Claude CLI usage log files and aggregates costs across various
 ### Filtering & Sorting Features
 - **Date Range Filtering**: Filter data by specifying start and end dates
 - **Default Period Limitation**: Shows only the last 30 days by default for performance
-- **Sort Functionality**: Sort by input tokens, output tokens, total tokens, or cost in ascending/descending order
+- **Sort Functionality**: Sort by input tokens, output tokens, total tokens, cost, or date in ascending/descending order
 
 ### Timezone Support
 - **Automatic Timezone Detection**: Calculates dates based on system timezone (default)
@@ -91,10 +91,11 @@ cccc --output yaml           # YAML format
 cccc --output csv            # CSV format
 
 # Sort functionality
-cccc --sort input            # Sort by input tokens (ascending)
-cccc --sort cost --sort-desc # Sort by cost (descending)
-cccc --sort total            # Sort by total tokens (ascending)
-cccc --sort output --sort-desc # Sort by output tokens (descending)
+cccc --sort asc --sort-field input    # Sort by input tokens (ascending)
+cccc --sort desc --sort-field cost    # Sort by cost (descending)
+cccc --sort asc --sort-field total    # Sort by total tokens (ascending)
+cccc --sort desc --sort-field output  # Sort by output tokens (descending)
+cccc --sort asc --sort-field date     # Sort by date (ascending)
 ```
 
 #### Date Range and Data Control
@@ -137,22 +138,26 @@ cccc --timezone Europe/London
 
 ```bash
 # Sort by input tokens (ascending)
-cccc --sort input
+cccc --sort asc --sort-field input
 
 # Sort by cost (descending)
-cccc --sort cost --sort-desc
+cccc --sort desc --sort-field cost
 
 # Sort by total tokens (monthly aggregation, descending)
-cccc --granularity monthly --sort total --sort-desc
+cccc --granularity monthly --sort desc --sort-field total
 
 # Sort by output tokens (per-project, ascending)
-cccc --granularity project --sort output
+cccc --granularity project --sort asc --sort-field output
+
+# Sort by date (descending) - show latest data first
+cccc --sort desc --sort-field date
 
 # Available sort fields:
 # - input:  Input token count
 # - output: Output token count
 # - total:  Total token count
 # - cost:   Cost (uses currency converted if available, otherwise USD)
+# - date:   Date/time (for time-based aggregations)
 ```
 
 ### Configuration File
@@ -195,7 +200,7 @@ To efficiently process large amounts of data, the following features are provide
 - **Default 30-day limit**: Automatically processes only the last 30 days of data
 - **Custom period specification**: Specify any period with `--start-date`/`--end-date`
 - **Full data access**: Use `--all-data` to disable the limit
-- **Result limiting**: Limit display count with `--limit` (planned for future implementation)
+- **Result limiting**: Limit display count with `--limit`
 
 ## Output Examples
 
@@ -275,22 +280,22 @@ cccc --granularity monthly \
     --end-date 2024-06-30
 
 # Per-project aggregation in CSV format (cost descending)
-cccc --granularity project --output csv --sort cost --sort-desc > project_costs.csv
+cccc --granularity project --output csv --sort desc --sort-field cost > project_costs.csv
 
 # Individual display of all logs in specific directory
 cccc --directory /custom/logs --granularity all --all-data
 
 # Last 7 days data in Japan time (input tokens descending)
-cccc --timezone Asia/Tokyo --start-date $(date -v-7d '+%Y-%m-%d') --sort input --sort-desc
+cccc --timezone Asia/Tokyo --start-date $(date -v-7d '+%Y-%m-%d') --sort desc --sort-field input
 
 # Performance-focused: show only top 50 results (total tokens descending)
-cccc --all-data --limit 50 --granularity session --sort total --sort-desc
+cccc --all-data --limit 50 --granularity session --sort desc --sort-field total
 
 # TOP 10 most expensive projects
-cccc --granularity project --sort cost --sort-desc --limit 10
+cccc --granularity project --sort desc --sort-field cost --limit 10
 
 # Monthly aggregation showing highest token usage months first
-cccc --granularity monthly --sort total --sort-desc --all-data
+cccc --granularity monthly --sort desc --sort-field total --all-data
 ```
 
 ### Automation Usage
