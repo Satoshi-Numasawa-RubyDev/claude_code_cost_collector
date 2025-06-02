@@ -2,17 +2,18 @@
 Tests for the CLI module.
 """
 
-import pytest
 import argparse
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from claude_code_cost_collector.cli import (
-    validate_date,
-    validate_directory,
     create_parser,
     parse_arguments,
+    validate_date,
+    validate_directory,
 )
 
 

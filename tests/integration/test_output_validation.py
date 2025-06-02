@@ -5,14 +5,15 @@ These tests validate the accuracy and consistency of output data
 across different formats and aggregation methods.
 """
 
-import pytest
-import json
-import yaml
 import csv
+import json
 import subprocess
 import sys
-from pathlib import Path
 from io import StringIO
+from pathlib import Path
+
+import pytest
+import yaml
 
 
 class TestOutputValidation:

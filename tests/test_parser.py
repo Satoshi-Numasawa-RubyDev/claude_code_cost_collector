@@ -3,22 +3,23 @@ Unit tests for the parser module.
 """
 
 import json
-import pytest
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pytest
+
+from claude_code_cost_collector.models import ProcessedLogEntry
 from claude_code_cost_collector.parser import (
-    parse_log_file,
-    parse_multiple_log_files,
+    LogParseError,
+    _clean_project_name,
+    _extract_project_name_from_path,
+    _extract_usage_info,
     _parse_single_log_entry,
     _parse_timestamp,
-    _extract_usage_info,
-    _extract_project_name_from_path,
-    _clean_project_name,
-    LogParseError,
+    parse_log_file,
+    parse_multiple_log_files,
 )
-from claude_code_cost_collector.models import ProcessedLogEntry
 
 
 class TestParseLogFile:

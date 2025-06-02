@@ -2,18 +2,19 @@
 Tests for the aggregator module.
 """
 
-import pytest
 from datetime import datetime
 
+import pytest
+
 from claude_code_cost_collector.aggregator import (
-    aggregate_data,
     _aggregate_by_daily,
     _aggregate_by_monthly,
     _aggregate_by_project,
     _aggregate_by_session,
-    _prepare_individual_entries,
     _create_aggregate_entry,
+    _prepare_individual_entries,
     _sort_aggregated_data,
+    aggregate_data,
     get_supported_granularities,
     validate_aggregation_input,
 )

@@ -7,7 +7,7 @@ the parser, aggregator, and formatter modules.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 
 @dataclass

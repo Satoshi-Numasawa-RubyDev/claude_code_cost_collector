@@ -29,7 +29,8 @@ bank/implement_steps.yaml
 - 以下を実行し, 正常であるか確認する事
     - `uv run python -m pytest tests/ -v`
     - `uv run python -m black .`
-    - `uv run python -m flake8 claude_code_cost_collector/ tests/`
+    - `uv run ruff check claude_code_cost_collector/ tests/`
+    - `uv run ruff format claude_code_cost_collector/ tests/` (import整理含む)
     - `uv run python -m mypy claude_code_cost_collector/`
 
 
@@ -93,13 +94,36 @@ bank/implement_steps.yaml
 - 大量データでのスケーラビリティ
 
 ### 8. 回帰テスト
-- 既存の全テストスイート実行（255個以上）
-- コード品質チェック（black, flake8, mypy）
+- 既存の全テストスイート実行（244個）
+- コード品質チェック（black, ruff, mypy）
 - 既存機能への影響がないことの確認
+
+# 開発ツール情報
+## コード品質ツール
+- **linter**: ruff (旧flake8から移行)
+- **formatter**: black + ruff format (import整理)
+- **type checker**: mypy
+- **test runner**: pytest
+- **package manager**: uv
+
+## ruff設定
+- line-length: 130 (blackと統一)
+- target-version: py313
+- 有効ルール: E (pycodestyle errors), F (pyflakes), I (isort)
+- import整理: known-first-party設定でプロジェクトモジュール識別
+- split-on-trailing-comma: blackとの互換性確保
+
+## 開発ワークフロー
+1. コード修正
+2. `uv run ruff format` - import整理含むフォーマット
+3. `uv run ruff check` - リンティング
+4. `uv run python -m black .` - 最終フォーマット確認
+5. `uv run python -m mypy` - 型チェック
+6. `uv run python -m pytest tests/ -v` - テスト実行
 
 # Release作業手順
 ## バージョン更新対象ファイル
-1. `pyproject.toml` - version フィールド (現在: 0.4.4)
+1. `pyproject.toml` - version フィールド (現在: 1.0.0)
 2. `claude_code_cost_collector/__init__.py` - __version__ 変数
 3. `tests/integration/test_end_to_end.py` - バージョンテストの期待値
 4. `CHANGELOG.md` - 新バージョンのエントリ追加
@@ -128,9 +152,10 @@ bank/implement_steps.yaml
 ### 検証
 6. テスト実行
    - `uv run python -m pytest tests/ -v`
-   - `uv run black .`
-   - `uv run flake8`
-   - `uv run mypy claude_code_cost_collector/`
+   - `uv run python -m black .`
+   - `uv run ruff check claude_code_cost_collector/ tests/`
+   - `uv run ruff format claude_code_cost_collector/ tests/`
+   - `uv run python -m mypy claude_code_cost_collector/`
 7. ビルドとパッケージング
    - `uv build`
 

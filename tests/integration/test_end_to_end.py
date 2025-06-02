@@ -5,15 +5,16 @@ These tests verify the complete application workflow from command-line input
 to output generation.
 """
 
-import pytest
-import json
-import yaml
 import csv
-import tempfile
+import json
 import subprocess
 import sys
-from pathlib import Path
+import tempfile
 from io import StringIO
+from pathlib import Path
+
+import pytest
+import yaml
 
 
 class TestEndToEndIntegration:
@@ -422,7 +423,7 @@ class TestEndToEndIntegration:
 
         assert result.returncode == 0
         assert "claude-code-cost-collector" in result.stdout
-        assert "1.0.0" in result.stdout
+        assert "1.0.1" in result.stdout
 
     def test_new_sort_interface_date_descending(self):
         """Test new sort interface with date field descending order."""

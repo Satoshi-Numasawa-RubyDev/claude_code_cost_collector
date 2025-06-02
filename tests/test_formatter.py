@@ -2,10 +2,12 @@
 Tests for the formatter module.
 """
 
-import pytest
 import json
+
+import pytest
 import yaml
-from claude_code_cost_collector.formatter import format_data, FormatterError, get_supported_formats, format_summary_statistics
+
+from claude_code_cost_collector.formatter import FormatterError, format_data, format_summary_statistics, get_supported_formats
 from claude_code_cost_collector.models import create_sample_processed_log_entry
 
 

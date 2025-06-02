@@ -2,9 +2,10 @@
 Tests for the __main__ module.
 """
 
-import pytest
 import sys
 from unittest.mock import patch
+
+import pytest
 
 
 # Test the __main__.py module

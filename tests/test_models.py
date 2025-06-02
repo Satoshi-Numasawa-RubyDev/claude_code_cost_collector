@@ -2,8 +2,9 @@
 Tests for the models module.
 """
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 from claude_code_cost_collector.models import (
     ProcessedLogEntry,

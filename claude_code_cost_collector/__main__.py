@@ -5,6 +5,7 @@ It calls the main() function from the main module and exits the program with app
 """
 
 import sys
+
 from .main import main
 
 if __name__ == "__main__":

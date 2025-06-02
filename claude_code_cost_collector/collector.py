@@ -4,11 +4,10 @@ Module for exploring and collecting Claude API log files.
 Recursively searches for JSON log files from specified directory.
 """
 
+import logging
 import os
 from pathlib import Path
 from typing import List, Union
-import logging
-
 
 logger = logging.getLogger(__name__)
 

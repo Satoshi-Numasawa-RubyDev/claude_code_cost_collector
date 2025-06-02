@@ -6,10 +6,11 @@ from external APIs for cost conversion purposes.
 """
 
 import json
-import requests
 import logging
 from datetime import date
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
+import requests
 
 
 class ExchangeRateError(Exception):
