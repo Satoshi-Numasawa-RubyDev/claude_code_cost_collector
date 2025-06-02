@@ -87,7 +87,7 @@ wheels = [
 
 [[package]]
 name = "claude-code-cost-collector"
-version = "0.5.3"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "pyyaml" },
