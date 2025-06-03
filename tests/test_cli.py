@@ -392,7 +392,7 @@ class TestParseArguments:
 
             args = parse_arguments([])
             assert args.sort == "desc"  # Default is now desc
-            assert args.sort_field is None  # Still None by default
+            assert args.sort_field == "date"  # Defaults to 'date' when not specified
 
     def test_sort_only_specified(self):
         """Test behavior when only --sort is specified."""
@@ -403,7 +403,7 @@ class TestParseArguments:
 
             args = parse_arguments(["--sort", "asc"])
             assert args.sort == "asc"
-            assert args.sort_field is None  # Should remain None
+            assert args.sort_field == "date"  # Should default to 'date' when sort is specified
 
     def test_sort_field_only_specified(self):
         """Test behavior when only --sort-field is specified."""

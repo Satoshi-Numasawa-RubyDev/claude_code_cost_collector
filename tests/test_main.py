@@ -482,10 +482,10 @@ class TestMainFunction:
 
         assert result == 0
 
-        # Verify that None sort_field is handled correctly
+        # Verify that None sort_field is passed through when CLI processing is bypassed
         mock_aggregate.assert_called_once()
         args, kwargs = mock_aggregate.call_args
-        assert kwargs["sort_by"] is None
+        assert kwargs["sort_by"] is None  # Mock bypasses CLI processing
         assert kwargs["sort_desc"] is False  # asc = False
 
 

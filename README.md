@@ -36,6 +36,7 @@ The tool analyzes Claude CLI usage log files and aggregates costs across various
 - **Date Range Filtering**: Filter data by specifying start and end dates
 - **Default Period Limitation**: Shows only the last 30 days by default for performance
 - **Sort Functionality**: Sort by input tokens, output tokens, total tokens, cost, or date in ascending/descending order
+- **Smart Default Sorting**: When only sort direction is specified, automatically sorts by date (most intuitive for time-series data)
 
 ### Timezone Support
 - **Automatic Timezone Detection**: Calculates dates based on system timezone (default)
@@ -91,11 +92,13 @@ cccc --output yaml           # YAML format
 cccc --output csv            # CSV format
 
 # Sort functionality
+cccc --sort asc                       # Sort by date (ascending) - smart default
+cccc --sort desc                      # Sort by date (descending) - smart default
 cccc --sort asc --sort-field input    # Sort by input tokens (ascending)
 cccc --sort desc --sort-field cost    # Sort by cost (descending)
 cccc --sort asc --sort-field total    # Sort by total tokens (ascending)
 cccc --sort desc --sort-field output  # Sort by output tokens (descending)
-cccc --sort asc --sort-field date     # Sort by date (ascending)
+cccc --sort asc --sort-field date     # Sort by date (ascending) - explicit
 ```
 
 #### Date Range and Data Control
@@ -137,27 +140,27 @@ cccc --timezone Europe/London
 #### Sort Functionality
 
 ```bash
-# Sort by input tokens (ascending)
-cccc --sort asc --sort-field input
+# Smart default sorting (sorts by date when only direction specified)
+cccc --sort asc                        # Sort by date (ascending) - oldest first
+cccc --sort desc                       # Sort by date (descending) - newest first
 
-# Sort by cost (descending)
-cccc --sort desc --sort-field cost
+# Sort by specific fields
+cccc --sort asc --sort-field input     # Sort by input tokens (ascending)
+cccc --sort desc --sort-field cost     # Sort by cost (descending)
 
-# Sort by total tokens (monthly aggregation, descending)
-cccc --granularity monthly --sort desc --sort-field total
+# Combined with other options
+cccc --granularity monthly --sort desc --sort-field total  # Monthly total tokens (descending)
+cccc --granularity project --sort asc --sort-field output  # Project output tokens (ascending)
 
-# Sort by output tokens (per-project, ascending)
-cccc --granularity project --sort asc --sort-field output
-
-# Sort by date (descending) - show latest data first
-cccc --sort desc --sort-field date
+# Explicit date sorting (same as smart default)
+cccc --sort desc --sort-field date     # Sort by date (descending) - show latest data first
 
 # Available sort fields:
 # - input:  Input token count
 # - output: Output token count
 # - total:  Total token count
 # - cost:   Cost (uses currency converted if available, otherwise USD)
-# - date:   Date/time (for time-based aggregations)
+# - date:   Date/time (for time-based aggregations) - used as default when field not specified
 ```
 
 ### Configuration File
@@ -207,6 +210,16 @@ To efficiently process large amounts of data, the following features are provide
 ### Text Format (Default)
 
 ```
+# Default output (sorted by date, descending - newest first)
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Date       ┃ Input      ┃ Output     ┃ Total       ┃ Cost (USD) ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━┩
+│ 2024-01-02 │ 2,345      │ 890        │ 3,235       │ $2.45      │
+│ 2024-01-01 │ 1,234      │ 567        │ 1,801       │ $1.23      │
+└────────────┴────────────┴────────────┴─────────────┴────────────┘
+Total: 3,579 input, 1,457 output, 5,036 total tokens, $3.68
+
+# With --sort asc (sorted by date, ascending - oldest first)
 ┏━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
 ┃ Date       ┃ Input      ┃ Output     ┃ Total       ┃ Cost (USD) ┃
 ┡━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━┩
@@ -284,6 +297,9 @@ cccc --granularity project --output csv --sort desc --sort-field cost > project_
 
 # Individual display of all logs in specific directory
 cccc --directory /custom/logs --granularity all --all-data
+
+# Last 7 days data in Japan time (chronological order, newest first)
+cccc --timezone Asia/Tokyo --start-date $(date -v-7d '+%Y-%m-%d') --sort desc
 
 # Last 7 days data in Japan time (input tokens descending)
 cccc --timezone Asia/Tokyo --start-date $(date -v-7d '+%Y-%m-%d') --sort desc --sort-field input
