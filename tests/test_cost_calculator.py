@@ -5,7 +5,6 @@ This module tests the cost calculation functionality including token usage valid
 cost estimation accuracy, confidence level determination, and error handling.
 """
 
-
 import pytest
 
 from claude_code_cost_collector.cost_calculator import (
