@@ -211,6 +211,10 @@ def parse_arguments(args: Optional[list] = None) -> argparse.Namespace:
         if start_date > end_date:
             parser.error("Start date must be before or equal to end date")
 
+    # Set default sort field to 'date' if not specified
+    if parsed_args.sort_field is None:
+        parsed_args.sort_field = "date"
+
     # Currency validation
     if parsed_args.currency:
         # Validate currency code format (3 uppercase letters)
