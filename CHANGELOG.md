@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-06-03
+
+### Changed
+- **Smart Default Sorting**: Enhanced `--sort` option behavior for improved user experience
+  - When only `--sort asc` or `--sort desc` is specified (without `--sort-field`), automatically defaults to sorting by date
+  - Provides intuitive chronological ordering for time-series cost data
+  - Maintains backward compatibility when both sort direction and field are explicitly specified
+  - Eliminates the need to explicitly specify `--sort-field date` for common date-based sorting use cases
+
+### Documentation
+- **README.md Updates**: Updated sort functionality documentation
+  - Added examples of smart default sorting behavior (`cccc --sort asc` for date ascending)
+  - Updated output examples to show both ascending and descending date sort results
+  - Enhanced sort functionality section with clearer explanations of available options
+  - Added advanced usage examples demonstrating the new smart sorting feature
+
 ## [1.0.2] - 2025-06-02
 
 ### Documentation
