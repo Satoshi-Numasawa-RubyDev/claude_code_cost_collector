@@ -1,5 +1,8 @@
 # Claude Code Cost Collector (CCCC)
 
+> **⚠️ IMPORTANT NOTICE: TOOL CURRENTLY NOT FUNCTIONAL**  
+> **Starting from Claude CLI version 1.0.9, the `costUSD` field is no longer included in the log files. This tool cannot extract cost information and will not display accurate cost data.**
+
 **This repository's code was created with [Claude Code](https://claude.ai/code)**
 
 A command-line tool for aggregating and displaying costs associated with Claude API usage.
