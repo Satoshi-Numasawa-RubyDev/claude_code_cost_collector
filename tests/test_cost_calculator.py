@@ -272,6 +272,38 @@ class TestErrorHandling:
         cost = self.calculator.calculate_cost(None, usage)
         assert cost > 0  # Should calculate using fallback pricing
 
+    def test_pricing_error_in_calculate_cost(self):
+        """Test error handling when PricingError occurs in calculate_cost."""
+        # Create a mock pricing manager that raises PricingError
+        from unittest.mock import Mock
+        from claude_code_cost_collector.model_pricing import PricingError
+
+        mock_manager = Mock()
+        mock_manager.get_pricing_or_fallback.side_effect = PricingError("Mock pricing error")
+
+        calculator = CostCalculator(mock_manager)
+        usage = TokenUsage(input_tokens=1000, output_tokens=500)
+
+        with pytest.raises(CostCalculationError, match="Failed to calculate cost for model 'test-model': Mock pricing error"):
+            calculator.calculate_cost("test-model", usage)
+
+    def test_pricing_error_in_calculate_cost_breakdown(self):
+        """Test error handling when PricingError occurs in calculate_cost_breakdown."""
+        # Create a mock pricing manager that raises PricingError
+        from unittest.mock import Mock
+        from claude_code_cost_collector.model_pricing import PricingError
+
+        mock_manager = Mock()
+        mock_manager.get_pricing_or_fallback.side_effect = PricingError("Mock pricing error")
+
+        calculator = CostCalculator(mock_manager)
+        usage = TokenUsage(input_tokens=1000, output_tokens=500)
+
+        with pytest.raises(
+            CostCalculationError, match="Failed to calculate cost breakdown for model 'test-model': Mock pricing error"
+        ):
+            calculator.calculate_cost_breakdown("test-model", usage)
+
 
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
@@ -322,6 +354,72 @@ class TestEdgeCases:
         cost = self.calculator.calculate_cost("claude-3-sonnet", usage)
         expected_cost = (1000 / 1_000_000) * 15.0
         assert abs(cost - expected_cost) < 1e-10
+
+    def test_confidence_threshold_edge_cases(self):
+        """Test confidence threshold edge cases."""
+        calculator = self.calculator
+
+        # Test with invalid confidence threshold (defaults to medium)
+        # Unknown model has medium confidence, so should pass medium threshold
+        assert calculator.is_cost_reliable("unknown-model", "invalid-threshold")
+
+        # Test with edge case thresholds
+        assert calculator.is_cost_reliable("claude-3-sonnet", "low")
+        assert calculator.is_cost_reliable("claude-3-sonnet", "medium")
+        assert calculator.is_cost_reliable("claude-3-sonnet", "high")
+
+        # Test reliability with unknown model at different thresholds
+        assert not calculator.is_cost_reliable("unknown-model", "high")
+        assert calculator.is_cost_reliable("unknown-model", "medium")
+        assert calculator.is_cost_reliable("unknown-model", "low")
+
+        # Test threshold boundary - create empty manager to force low confidence
+        from claude_code_cost_collector.model_pricing import ModelPricingManager
+
+        empty_manager = ModelPricingManager()
+        empty_manager._pricing_data.clear()  # Remove all models
+        empty_calculator = CostCalculator(empty_manager)
+
+        # Should have low confidence and fail medium/high thresholds
+        assert not empty_calculator.is_cost_reliable("any-model", "medium")
+        assert not empty_calculator.is_cost_reliable("any-model", "high")
+        assert empty_calculator.is_cost_reliable("any-model", "low")
+
+    def test_extremely_large_token_values(self):
+        """Test with extremely large token values."""
+        usage = TokenUsage(
+            input_tokens=999_999_999,  # Near 1 billion tokens
+            output_tokens=999_999_999,
+            cache_creation_tokens=999_999_999,
+            cache_read_tokens=999_999_999,
+        )
+
+        cost = self.calculator.calculate_cost("claude-3-sonnet", usage)
+
+        # Should handle large values without overflow
+        assert cost > 0
+        assert cost < float("inf")
+
+        # Verify calculation is approximately correct
+        expected_input = (999_999_999 / 1_000_000) * 3.0
+        expected_output = (999_999_999 / 1_000_000) * 15.0
+        expected_cache_creation = (999_999_999 / 1_000_000) * 3.75
+        expected_cache_read = (999_999_999 / 1_000_000) * 0.3
+        expected_total = expected_input + expected_output + expected_cache_creation + expected_cache_read
+
+        assert abs(cost - expected_total) < 1e-3  # Allow small floating point errors
+
+    def test_fractional_token_handling(self):
+        """Test that integer token values work correctly with fractional results."""
+        # Test with values that result in fractional costs
+        usage = TokenUsage(input_tokens=1, output_tokens=1)
+
+        cost = self.calculator.calculate_cost("claude-3-sonnet", usage)
+
+        # Very small cost should be handled properly
+        expected_cost = (1 / 1_000_000) * 3.0 + (1 / 1_000_000) * 15.0  # 0.000018
+        assert abs(cost - expected_cost) < 1e-10
+        assert 0 < cost < 0.001  # Should be a very small positive value
 
 
 class TestIntegration:
@@ -388,3 +486,147 @@ class TestIntegration:
         breakdown = self.calculator.calculate_cost_breakdown("claude-3-haiku", usage)
 
         assert abs(direct_cost - breakdown["total_cost"]) < 1e-10
+
+    def test_real_v1_0_9_sample_cost_calculation(self):
+        """Test cost calculation with real v1.0.9 sample data."""
+        # Real token usage from v1.0.9 sample data
+        usage = TokenUsage(
+            input_tokens=4,
+            output_tokens=252,
+            cache_creation_tokens=6094,
+            cache_read_tokens=13558,
+        )
+
+        # Test with claude-sonnet-4-20250514 (the actual model from sample)
+        cost, confidence = self.calculator.estimate_cost_with_confidence("claude-sonnet-4-20250514", usage)
+
+        # Should have high confidence for supported model
+        assert confidence == "high"
+
+        # Calculate expected cost based on known pricing
+        pricing = self.calculator.pricing_manager.get_pricing("claude-sonnet-4-20250514")
+        assert pricing is not None
+
+        expected_cost = (
+            (4 / 1_000_000) * pricing.input_price_per_million
+            + (252 / 1_000_000) * pricing.output_price_per_million
+            + (6094 / 1_000_000) * pricing.cache_creation_price_per_million
+            + (13558 / 1_000_000) * pricing.cache_read_price_per_million
+        )
+
+        assert abs(cost - expected_cost) < 1e-6
+        assert cost > 0  # Should be a reasonable positive cost
+
+        # Verify breakdown matches
+        breakdown = self.calculator.calculate_cost_breakdown("claude-sonnet-4-20250514", usage)
+        assert abs(breakdown["total_cost"] - cost) < 1e-10
+
+
+class TestCostCalculatorPerformance:
+    """Performance tests for CostCalculator."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.calculator = create_default_cost_calculator()
+
+    def test_bulk_cost_calculation_performance(self):
+        """Test performance with bulk cost calculations."""
+        import time
+
+        # Create many token usage scenarios
+        usage_scenarios = []
+        for i in range(1000):
+            usage = TokenUsage(
+                input_tokens=100 + i,
+                output_tokens=50 + i // 2,
+                cache_creation_tokens=i * 10,
+                cache_read_tokens=i * 20,
+            )
+            usage_scenarios.append(usage)
+
+        models = ["claude-3-sonnet", "claude-3-haiku", "claude-sonnet-4"]
+
+        start_time = time.time()
+        total_cost = 0.0
+
+        for i, usage in enumerate(usage_scenarios):
+            model = models[i % len(models)]
+            cost = self.calculator.calculate_cost(model, usage)
+            total_cost += cost
+
+        end_time = time.time()
+
+        # Should complete 1000 calculations quickly (< 0.5 seconds)
+        calculation_time = end_time - start_time
+        assert calculation_time < 0.5
+
+        # Total cost should be reasonable
+        assert total_cost > 0
+        assert total_cost < 10000  # Sanity check
+
+    def test_confidence_calculation_performance(self):
+        """Test performance of confidence calculations."""
+        import time
+
+        usage = TokenUsage(input_tokens=1000, output_tokens=500)
+        models = [f"test-model-{i}" for i in range(100)]
+
+        start_time = time.time()
+
+        for model in models:
+            cost, confidence = self.calculator.estimate_cost_with_confidence(model, usage)
+            assert cost > 0
+            assert confidence in ["high", "medium", "low"]
+
+        end_time = time.time()
+
+        # Should complete 100 confidence calculations quickly (< 0.1 seconds)
+        calculation_time = end_time - start_time
+        assert calculation_time < 0.1
+
+    def test_cost_breakdown_performance(self):
+        """Test performance of detailed cost breakdown calculations."""
+        import time
+
+        usage = TokenUsage(
+            input_tokens=1000,
+            output_tokens=500,
+            cache_creation_tokens=2000,
+            cache_read_tokens=5000,
+        )
+
+        models = ["claude-3-sonnet", "claude-3-haiku", "claude-sonnet-4"]
+
+        start_time = time.time()
+
+        for _ in range(100):
+            for model in models:
+                breakdown = self.calculator.calculate_cost_breakdown(model, usage)
+                assert len(breakdown) == 5  # 4 cost components + total
+                assert breakdown["total_cost"] > 0
+
+        end_time = time.time()
+
+        # Should complete 300 breakdown calculations quickly (< 0.2 seconds)
+        calculation_time = end_time - start_time
+        assert calculation_time < 0.2
+
+    def test_reliability_check_performance(self):
+        """Test performance of reliability checks."""
+        import time
+
+        models = [f"test-model-{i}" for i in range(200)]
+        thresholds = ["low", "medium", "high"]
+
+        start_time = time.time()
+
+        for model in models:
+            for threshold in thresholds:
+                reliable = self.calculator.is_cost_reliable(model, threshold)
+                assert isinstance(reliable, bool)
+
+        end_time = time.time()
+
+        # Should complete 600 reliability checks quickly (< 0.1 seconds)
+        calculation_time = end_time - start_time
+        assert calculation_time < 0.1
