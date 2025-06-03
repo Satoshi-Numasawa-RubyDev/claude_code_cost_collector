@@ -364,7 +364,7 @@ pip install -e .
 uv run python -m pytest
 
 # Code formatting
-uv run python -m black .
+uv run ruff format .
 
 # Linting
 uv run python -m flake8

@@ -28,9 +28,8 @@ bank/implement_steps.yaml
 - test に修正内容を反映する事.
 - 以下を実行し, 正常であるか確認する事
     - `uv run python -m pytest tests/ -v`
-    - `uv run python -m black .`
-    - `uv run ruff check claude_code_cost_collector/ tests/`
-    - `uv run ruff format claude_code_cost_collector/ tests/` (import整理含む)
+    - `uv run ruff format claude_code_cost_collector/ tests/` (import整理とフォーマット)
+    - `uv run ruff check claude_code_cost_collector/ tests/` (リンティング)
     - `uv run python -m mypy claude_code_cost_collector/`
 
 ## 機能削除・変更時の残置確認ルール
@@ -175,31 +174,30 @@ rg "TODO.*sort-desc|FIXME.*sort-desc" --type py
 
 ### 8. 回帰テスト
 - 既存の全テストスイート実行（244個）
-- コード品質チェック（black, ruff, mypy）
+- コード品質チェック（ruff, mypy）
 - 既存機能への影響がないことの確認
 
 # 開発ツール情報
 ## コード品質ツール
 - **linter**: ruff (旧flake8から移行)
-- **formatter**: black + ruff format (import整理)
+- **formatter**: ruff format (import整理とコードフォーマット)
 - **type checker**: mypy
 - **test runner**: pytest
 - **package manager**: uv
 
 ## ruff設定
-- line-length: 130 (blackと統一)
+- line-length: 130
 - target-version: py313
 - 有効ルール: E (pycodestyle errors), F (pyflakes), I (isort)
 - import整理: known-first-party設定でプロジェクトモジュール識別
-- split-on-trailing-comma: blackとの互換性確保
+- split-on-trailing-comma: 読みやすさとフォーマット品質確保
 
 ## 開発ワークフロー
 1. コード修正
-2. `uv run ruff format` - import整理含むフォーマット
+2. `uv run ruff format` - import整理とコードフォーマット
 3. `uv run ruff check` - リンティング
-4. `uv run python -m black .` - 最終フォーマット確認
-5. `uv run python -m mypy` - 型チェック
-6. `uv run python -m pytest tests/ -v` - テスト実行
+4. `uv run python -m mypy` - 型チェック
+5. `uv run python -m pytest tests/ -v` - テスト実行
 
 # Release作業手順
 ## バージョン更新対象ファイル
@@ -232,9 +230,8 @@ rg "TODO.*sort-desc|FIXME.*sort-desc" --type py
 ### 検証
 6. テスト実行
    - `uv run python -m pytest tests/ -v`
-   - `uv run python -m black .`
-   - `uv run ruff check claude_code_cost_collector/ tests/`
    - `uv run ruff format claude_code_cost_collector/ tests/`
+   - `uv run ruff check claude_code_cost_collector/ tests/`
    - `uv run python -m mypy claude_code_cost_collector/`
 7. ビルドとパッケージング
    - `uv build`

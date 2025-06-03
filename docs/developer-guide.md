@@ -348,7 +348,9 @@ class ExamplePlugin(OutputPlugin):
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": false,
     "ruff.enable": true,
-    "python.formatting.provider": "black",
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
     "python.testing.pytestEnabled": true,
     "python.testing.pytestArgs": ["tests"]
 }
@@ -398,7 +400,6 @@ jobs:
         source .venv/bin/activate
         ruff check claude_code_cost_collector/ tests/
         ruff format --check claude_code_cost_collector/ tests/
-        black --check .
         mypy claude_code_cost_collector/
 ```
 

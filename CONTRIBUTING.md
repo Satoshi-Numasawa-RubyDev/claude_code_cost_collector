@@ -40,7 +40,6 @@ uv run python -m pytest
 
 # コードフォーマット
 uv run ruff format claude_code_cost_collector/ tests/
-uv run python -m black .
 
 # リンティング
 uv run ruff check claude_code_cost_collector/ tests/
