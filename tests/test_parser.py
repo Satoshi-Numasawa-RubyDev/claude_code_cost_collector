@@ -12,6 +12,7 @@ import pytest
 from claude_code_cost_collector.models import ProcessedLogEntry
 from claude_code_cost_collector.parser import (
     LogParseError,
+    LogParser,
     _clean_project_name,
     _extract_project_name_from_path,
     _extract_usage_info,
@@ -526,6 +527,197 @@ class TestTimezoneHandling:
             entries = parse_log_file(temp_path, target_timezone=None)
             assert len(entries) == 1
             assert entries[0].date_str == "2025-05-31"  # UTC behavior
+
+        finally:
+            temp_path.unlink()
+
+
+class TestLogParserV109Format:
+    """Test LogParser class with v1.0.9 format support."""
+
+    def test_parse_v1_0_9_format_entry(self):
+        """Test parsing v1.0.9 format entry without costUSD field."""
+        raw_entry = {
+            "type": "assistant",
+            "uuid": "aa87c72a-a2b7-4db0-93f3-0892afe18d40",
+            "sessionId": "0da08427-d1b9-4055-8314-83d3f147b157",
+            "timestamp": "2025-06-03T12:35:42.663Z",
+            "version": "1.0.9",
+            "message": {
+                "role": "assistant",
+                "model": "claude-3-5-sonnet-20241022",
+                "content": "Test response",
+                "usage": {
+                    "input_tokens": 100,
+                    "output_tokens": 50,
+                    "cache_creation_input_tokens": 0,
+                    "cache_read_input_tokens": 0,
+                },
+                "ttftMs": 1234,
+            },
+        }
+
+        parser = LogParser()
+        entry = parser.parse_log_entry(raw_entry, "test_project", Path("/test/path"))
+
+        assert entry is not None
+        assert entry.session_id == "0da08427-d1b9-4055-8314-83d3f147b157"
+        assert entry.project_name == "test_project"
+        assert entry.input_tokens == 100
+        assert entry.output_tokens == 50
+        assert entry.total_tokens == 150
+        assert entry.model == "claude-3-5-sonnet-20241022"
+        # Cost should be estimated (not zero)
+        assert entry.cost_usd > 0
+        assert entry.cache_creation_tokens == 0
+        assert entry.cache_read_tokens == 0
+
+    def test_parse_v1_0_9_with_cache_tokens(self):
+        """Test parsing v1.0.9 format entry with cache tokens."""
+        raw_entry = {
+            "type": "assistant",
+            "uuid": "test-uuid",
+            "sessionId": "test-session",
+            "timestamp": "2025-06-03T12:35:42.663Z",
+            "version": "1.0.9",
+            "message": {
+                "role": "assistant",
+                "model": "claude-3-5-sonnet-20241022",
+                "content": "Test response",
+                "usage": {
+                    "input_tokens": 100,
+                    "output_tokens": 50,
+                    "cache_creation_input_tokens": 200,
+                    "cache_read_input_tokens": 300,
+                },
+                "ttftMs": 1234,
+            },
+        }
+
+        parser = LogParser()
+        entry = parser.parse_log_entry(raw_entry, "test_project", Path("/test/path"))
+
+        assert entry is not None
+        assert entry.input_tokens == 100
+        assert entry.output_tokens == 50
+        assert entry.cache_creation_tokens == 200
+        assert entry.cache_read_tokens == 300
+        assert entry.total_tokens == 650  # 100 + 50 + 200 + 300
+        # Cost should include cache creation tokens
+        assert entry.cost_usd > 0
+
+    def test_parse_legacy_format_still_works(self):
+        """Test that legacy format parsing still works with LogParser."""
+        raw_entry = {
+            "type": "assistant",
+            "sessionId": "test-session",
+            "timestamp": "2025-05-09T12:03:20.000Z",
+            "costUSD": 0.1,
+            "message": {"model": "claude-3-sonnet", "usage": {"input_tokens": 10, "output_tokens": 20}},
+        }
+
+        parser = LogParser()
+        entry = parser.parse_log_entry(raw_entry, "test_project", Path("/test/path"))
+
+        assert entry is not None
+        assert entry.session_id == "test-session"
+        assert entry.input_tokens == 10
+        assert entry.output_tokens == 20
+        assert entry.cost_usd == 0.1  # Should use provided cost, not estimated
+        assert entry.model == "claude-3-sonnet"
+
+    def test_parse_unknown_format_fallback(self):
+        """Test fallback behavior for unknown format entries."""
+        raw_entry = {
+            "type": "assistant",
+            "sessionId": "test-session",
+            "timestamp": "2025-05-09T12:03:20.000Z",
+            # No costUSD and no v1.0.9 indicators
+            "message": {"model": "some-unknown-model", "usage": {"input_tokens": 10, "output_tokens": 20}},
+        }
+
+        parser = LogParser()
+        # Should return None (skip entry) since it can't determine format
+        entry = parser.parse_log_entry(raw_entry, "test_project", Path("/test/path"))
+        assert entry is None
+
+    def test_parse_v1_0_9_missing_required_fields(self):
+        """Test handling of v1.0.9 format entries missing required fields."""
+        raw_entry = {
+            "type": "assistant",
+            "uuid": "test-uuid",
+            # Missing sessionId, timestamp, or message.model
+            "version": "1.0.9",
+            "message": {"role": "assistant", "content": "Test response", "ttftMs": 1234},
+        }
+
+        parser = LogParser()
+        with pytest.raises(LogParseError, match="Missing required fields"):
+            parser.parse_log_entry(raw_entry, "test_project", Path("/test/path"))
+
+    def test_parse_file_with_mixed_formats(self):
+        """Test parsing a file containing both legacy and v1.0.9 format entries."""
+        log_data = [
+            # Legacy format entry
+            {
+                "type": "assistant",
+                "sessionId": "legacy-session",
+                "timestamp": "2025-05-09T12:03:20.000Z",
+                "costUSD": 0.1,
+                "message": {"model": "claude-3-sonnet", "usage": {"input_tokens": 10, "output_tokens": 20}},
+            },
+            # v1.0.9 format entry
+            {
+                "type": "assistant",
+                "uuid": "v109-uuid",
+                "sessionId": "v109-session",
+                "timestamp": "2025-06-03T12:35:42.663Z",
+                "version": "1.0.9",
+                "message": {
+                    "role": "assistant",
+                    "model": "claude-3-5-sonnet-20241022",
+                    "content": "Test response",
+                    "usage": {
+                        "input_tokens": 100,
+                        "output_tokens": 50,
+                    },
+                    "ttftMs": 1234,
+                },
+            },
+        ]
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(log_data, f)
+            temp_path = Path(f.name)
+
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                projects_dir = Path(temp_dir) / "projects" / "mixed_format_project"
+                projects_dir.mkdir(parents=True)
+                log_file = projects_dir / "logs.json"
+
+                with open(temp_path, "r", encoding="utf-8") as src:
+                    with open(log_file, "w", encoding="utf-8") as dst:
+                        dst.write(src.read())
+
+                entries = parse_log_file(log_file)
+
+            assert len(entries) == 2
+
+            # Find legacy and v1.0.9 entries
+            legacy_entry = next((e for e in entries if e.session_id == "legacy-session"), None)
+            v109_entry = next((e for e in entries if e.session_id == "v109-session"), None)
+
+            assert legacy_entry is not None
+            assert v109_entry is not None
+
+            # Legacy entry should have exact cost
+            assert legacy_entry.cost_usd == 0.1
+            assert legacy_entry.model == "claude-3-sonnet"
+
+            # v1.0.9 entry should have estimated cost
+            assert v109_entry.cost_usd > 0
+            assert v109_entry.model == "claude-3-5-sonnet-20241022"
 
         finally:
             temp_path.unlink()
