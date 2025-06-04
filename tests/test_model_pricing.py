@@ -688,6 +688,7 @@ class TestNewFormatIntegration:
         # Models that appear in v1.0.9 sample data
         v1_0_9_models = [
             "claude-sonnet-4-20250514",
+            "claude-opus-4-20250514",
             "claude-3-7-sonnet-20250219",
             "claude-3-5-sonnet-20241022",
         ]
@@ -756,6 +757,7 @@ class TestNewFormatIntegration:
         # Models that appear in actual v1.0.9 sample data
         v1_0_9_sample_models = [
             "claude-sonnet-4-20250514",
+            "claude-opus-4-20250514", 
             "claude-3-7-sonnet-20250219",
             "claude-3-5-sonnet-20241022",
         ]
@@ -771,7 +773,7 @@ class TestNewFormatIntegration:
             assert pricing.cache_read_price_per_million >= 0
 
             # Output should typically be more expensive than input
-            if model in ["claude-sonnet-4-20250514", "claude-sonnet-4"]:
+            if model in ["claude-sonnet-4-20250514", "claude-opus-4-20250514", "claude-sonnet-4", "claude-opus-4"]:
                 # High-end models should have higher pricing
                 assert pricing.input_price_per_million >= 10.0
 

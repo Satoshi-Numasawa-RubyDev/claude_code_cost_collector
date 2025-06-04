@@ -147,6 +147,12 @@ class ModelPricingManager:
                 cache_creation_price_per_million=18.75,
                 cache_read_price_per_million=1.5,
             ),
+            "claude-opus-4-20250514": ModelPricing(
+                input_price_per_million=15.0,
+                output_price_per_million=75.0,
+                cache_creation_price_per_million=18.75,
+                cache_read_price_per_million=1.5,
+            ),
             "claude-3.7-sonnet": ModelPricing(
                 input_price_per_million=3.0,
                 output_price_per_million=15.0,
