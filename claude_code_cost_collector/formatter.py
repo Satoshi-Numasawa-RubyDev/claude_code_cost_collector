@@ -32,6 +32,7 @@ def format_data(
     limit: Optional[int] = None,
     sort_by: Optional[str] = None,
     sort_desc: bool = False,
+    show_estimated_costs: bool = True,
 ) -> str:
     """Main formatting function that dispatches to appropriate formatter.
 
@@ -43,6 +44,7 @@ def format_data(
         limit: Maximum number of results to display (None for no limit)
         sort_by: Sort field ('input', 'output', 'total', 'cost') - if None, use existing order
         sort_desc: Sort in descending order (default: False)
+        show_estimated_costs: Whether to show asterisk indicators for estimated costs (default: True)
 
     Returns:
         Formatted string ready for output
@@ -61,13 +63,13 @@ def format_data(
 
     try:
         if output_format == "text":
-            return _format_text_table(data, granularity, target_currency, sort_by)
+            return _format_text_table(data, granularity, target_currency, sort_by, show_estimated_costs)
         elif output_format == "json":
-            return _format_json(data, granularity, target_currency)
+            return _format_json(data, granularity, target_currency, show_estimated_costs)
         elif output_format == "yaml":
-            return _format_yaml(data, granularity, target_currency)
+            return _format_yaml(data, granularity, target_currency, show_estimated_costs)
         elif output_format == "csv":
-            return _format_csv(data, granularity, target_currency)
+            return _format_csv(data, granularity, target_currency, show_estimated_costs)
         else:
             # This should never be reached due to the check above
             raise FormatterError(f"Unknown output format: {output_format}")
@@ -80,6 +82,7 @@ def _format_text_table(
     granularity: str,
     target_currency: Optional[str] = None,
     sort_by: Optional[str] = None,
+    show_estimated_costs: bool = True,
 ) -> str:
     """Format data as a text table using rich library.
 
@@ -93,13 +96,16 @@ def _format_text_table(
         Formatted text table as string
     """
     if isinstance(data, list):
-        return _format_individual_entries_as_text(data, target_currency)
+        return _format_individual_entries_as_text(data, target_currency, show_estimated_costs)
     else:
-        return _format_aggregated_data_as_text(data, granularity, target_currency, sort_by)
+        return _format_aggregated_data_as_text(data, granularity, target_currency, sort_by, show_estimated_costs)
 
 
 def _format_json(
-    data: Union[ProcessedLogEntries, AggregatedData], granularity: str, target_currency: Optional[str] = None
+    data: Union[ProcessedLogEntries, AggregatedData],
+    granularity: str,
+    target_currency: Optional[str] = None,
+    show_estimated_costs: bool = True,
 ) -> str:
     """Format data as JSON.
 
@@ -130,12 +136,21 @@ def _format_json(
                 total_cost_usd = 0.0
                 total_converted_cost = 0.0 if target_currency else None
 
-            summary = {
+            # Check for estimated costs in individual entries
+            has_estimated_costs = any(entry.cost_estimated for entry in data)
+
+            summary: Dict[str, Any] = {
                 "total_tokens": total_tokens,
                 "total_cost_usd": total_cost_usd,
+                "has_estimated_costs": has_estimated_costs,
             }
             if target_currency and total_converted_cost is not None:
                 summary[f"total_cost_{target_currency.lower()}"] = total_converted_cost
+
+            if has_estimated_costs:
+                summary["cost_estimation_warning"] = (
+                    "Some cost values are estimated based on token count and may not reflect actual charges"
+                )
 
         else:
             # Aggregated data
@@ -146,13 +161,22 @@ def _format_json(
             total_tokens = sum(values.get("total_tokens", 0) for values in data.values())
             total_cost_usd = sum(values.get("total_cost_usd", 0.0) for values in data.values())
 
+            # Check for estimated costs in aggregated data
+            has_estimated_costs = any(values.get("has_estimated_costs", False) for values in data.values())
+
             summary = {
                 "total_tokens": total_tokens,
                 "total_cost_usd": total_cost_usd,
+                "has_estimated_costs": has_estimated_costs,
             }
             if target_currency:
                 total_converted_cost = sum(values.get("total_converted_cost", 0.0) for values in data.values())
                 summary[f"total_cost_{target_currency.lower()}"] = total_converted_cost
+
+            if has_estimated_costs:
+                summary["cost_estimation_warning"] = (
+                    "Some cost values are estimated based on token count and may not reflect actual charges"
+                )
 
         output = {
             "metadata": {
@@ -174,7 +198,10 @@ def _format_json(
 
 
 def _format_yaml(
-    data: Union[ProcessedLogEntries, AggregatedData], granularity: str, target_currency: Optional[str] = None
+    data: Union[ProcessedLogEntries, AggregatedData],
+    granularity: str,
+    target_currency: Optional[str] = None,
+    show_estimated_costs: bool = True,
 ) -> str:
     """Format data as YAML.
 
@@ -212,7 +239,12 @@ def _format_yaml(
     return str(result)
 
 
-def _format_csv(data: Union[ProcessedLogEntries, AggregatedData], granularity: str, target_currency: Optional[str] = None) -> str:
+def _format_csv(
+    data: Union[ProcessedLogEntries, AggregatedData],
+    granularity: str,
+    target_currency: Optional[str] = None,
+    show_estimated_costs: bool = True,
+) -> str:
     """Format data as CSV.
 
     This is a stub implementation that will be detailed in task 6.4.
@@ -230,6 +262,8 @@ def _format_csv(data: Union[ProcessedLogEntries, AggregatedData], granularity: s
             "output_tokens",
             "total_tokens",
             "cost_usd",
+            "cost_estimated",
+            "cost_confidence",
             "model",
         ]
         if target_currency:
@@ -246,6 +280,8 @@ def _format_csv(data: Union[ProcessedLogEntries, AggregatedData], granularity: s
                 entry.output_tokens,
                 entry.total_tokens,
                 entry.cost_usd,
+                getattr(entry, "cost_estimated", False),
+                getattr(entry, "cost_confidence", "high"),
                 entry.model,
             ]
             if target_currency and hasattr(entry, "converted_cost") and entry.converted_cost is not None:
@@ -272,6 +308,7 @@ def _format_csv(data: Union[ProcessedLogEntries, AggregatedData], granularity: s
             "total_output_tokens",
             "total_tokens",
             "total_cost_usd",
+            "has_estimated_costs",
         ]
         if target_currency:
             headers.append(f"total_cost_{target_currency.lower()}")
@@ -286,6 +323,7 @@ def _format_csv(data: Union[ProcessedLogEntries, AggregatedData], granularity: s
                 values.get("total_output_tokens", 0),
                 values.get("total_tokens", 0),
                 values.get("total_cost_usd", 0.0),
+                values.get("has_estimated_costs", False),
             ]
             if target_currency:
                 row.append(values.get("total_converted_cost", 0.0) if values.get("total_converted_cost") is not None else "")
@@ -294,7 +332,9 @@ def _format_csv(data: Union[ProcessedLogEntries, AggregatedData], granularity: s
     return output.getvalue()
 
 
-def _format_individual_entries_as_text(entries: ProcessedLogEntries, target_currency: Optional[str] = None) -> str:
+def _format_individual_entries_as_text(
+    entries: ProcessedLogEntries, target_currency: Optional[str] = None, show_estimated_costs: bool = True
+) -> str:
     """Helper function to format individual log entries as text table.
 
     Args:
@@ -335,6 +375,11 @@ def _format_individual_entries_as_text(entries: ProcessedLogEntries, target_curr
         if target_currency and hasattr(entry, "converted_cost") and entry.converted_cost:
             total_converted_cost += entry.converted_cost
 
+        # Format cost with estimated indicator
+        cost_str = f"${entry.cost_usd:.4f}"
+        if show_estimated_costs and hasattr(entry, "cost_estimated") and entry.cost_estimated:
+            cost_str += "*"
+
         row_data = [
             entry.date_str,
             (entry.project_name[:20] + "..." if len(entry.project_name) > 20 else entry.project_name),
@@ -343,7 +388,7 @@ def _format_individual_entries_as_text(entries: ProcessedLogEntries, target_curr
             f"{entry.input_tokens:,}",
             f"{entry.output_tokens:,}",
             f"{entry.total_tokens:,}",
-            f"${entry.cost_usd:.4f}",
+            cost_str,
         ]
 
         if target_currency:
@@ -357,6 +402,12 @@ def _format_individual_entries_as_text(entries: ProcessedLogEntries, target_curr
 
         table.add_row(*row_data)
 
+    # Check if any entry has estimated costs for total row display
+    has_estimated = any(hasattr(e, "cost_estimated") and e.cost_estimated for e in entries)
+    total_cost_str = f"${total_cost_usd:.4f}"
+    if show_estimated_costs and has_estimated:
+        total_cost_str += "*"
+
     # Add total row
     total_row: List[Union[str, Text]] = [
         Text("TOTAL", style="bold red"),
@@ -366,7 +417,7 @@ def _format_individual_entries_as_text(entries: ProcessedLogEntries, target_curr
         f"{sum(e.input_tokens for e in entries):,}",
         f"{sum(e.output_tokens for e in entries):,}",
         f"{total_tokens:,}",
-        f"${total_cost_usd:.4f}",
+        total_cost_str,
     ]
 
     if target_currency:
@@ -380,11 +431,19 @@ def _format_individual_entries_as_text(entries: ProcessedLogEntries, target_curr
     with console.capture() as capture:
         console.print(table)
 
+        # Add estimated cost explanation if any costs are estimated (individual entries)
+        if show_estimated_costs and has_estimated:
+            console.print("\n[yellow]* Estimated cost based on token count and model pricing[/yellow]")
+
     return capture.get()
 
 
 def _format_aggregated_data_as_text(
-    data: AggregatedData, granularity: str, target_currency: Optional[str] = None, sort_by: Optional[str] = None
+    data: AggregatedData,
+    granularity: str,
+    target_currency: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    show_estimated_costs: bool = True,
 ) -> str:
     """Helper function to format aggregated data as text table.
 
@@ -477,6 +536,11 @@ def _format_aggregated_data_as_text(
         # Format key for display (truncate if too long)
         display_key = key[:30] + "..." if len(key) > 30 else key
 
+        # Format cost with estimated indicator
+        cost_str = f"${cost_usd:.4f}"
+        if show_estimated_costs and values.get("has_estimated_costs", False):
+            cost_str += "*"
+
         row_data = [
             display_key,
             f"{input_tokens:,}",
@@ -484,7 +548,7 @@ def _format_aggregated_data_as_text(
             f"{cache_creation_tokens:,}",
             f"{cache_read_tokens:,}",
             f"{tokens:,}",
-            f"${cost_usd:.4f}",
+            cost_str,
         ]
 
         if target_currency:
@@ -494,6 +558,12 @@ def _format_aggregated_data_as_text(
 
         table.add_row(*row_data)
 
+    # Check if any aggregated data has estimated costs for total row display
+    has_estimated_total = any(values.get("has_estimated_costs", False) for key, values in sorted_data)
+    total_cost_str = f"${total_cost_usd:.4f}"
+    if show_estimated_costs and has_estimated_total:
+        total_cost_str += "*"
+
     # Add total row
     total_row: List[Union[str, Text]] = [
         Text("TOTAL", style="bold red"),
@@ -502,7 +572,7 @@ def _format_aggregated_data_as_text(
         f"{total_cache_creation:,}",
         f"{total_cache_read:,}",
         f"{total_tokens:,}",
-        f"${total_cost_usd:.4f}",
+        total_cost_str,
     ]
 
     if target_currency:
@@ -515,6 +585,10 @@ def _format_aggregated_data_as_text(
     # Capture console output
     with console.capture() as capture:
         console.print(table)
+
+        # Add estimated cost explanation if any costs are estimated (aggregated data)
+        if show_estimated_costs and has_estimated_total:
+            console.print("\n[yellow]* Estimated cost based on token count and model pricing[/yellow]")
 
     return capture.get()
 

@@ -1,7 +1,11 @@
 # Claude Code Cost Collector (CCCC)
 
-> **⚠️ IMPORTANT NOTICE: TOOL CURRENTLY NOT FUNCTIONAL**  
-> **Starting from Claude CLI version 1.0.9, the `costUSD` field is no longer included in the log files. This tool cannot extract cost information and will not display accurate cost data.**
+## Claude Code v1.0.9 Compatibility
+
+This tool supports both legacy and new Claude Code log formats:
+
+- **Legacy Format (Claude Code < 1.0.9)**: Uses exact `costUSD` values from logs for precise cost reporting
+- **New Format (Claude Code ≥ 1.0.9)**: Calculates costs from token counts using current model pricing (slight estimation variance expected due to token-based calculation)
 
 **This repository's code was created with [Claude Code](https://claude.ai/code)**
 

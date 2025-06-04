@@ -55,6 +55,25 @@ def filter_entries_by_date_range(
     return filtered_entries
 
 
+def filter_entries_by_cost_options(
+    entries: List[ProcessedLogEntry], cost_calculation_mode: str = "mixed"
+) -> List[ProcessedLogEntry]:
+    """Filter entries by cost calculation mode."""
+    filtered_entries = []
+
+    for entry in entries:
+        # Filter by cost calculation mode
+        if cost_calculation_mode == "exact" and entry.cost_estimated:
+            continue
+        elif cost_calculation_mode == "estimated" and not entry.cost_estimated:
+            continue
+        # "mixed" mode includes all entries
+
+        filtered_entries.append(entry)
+
+    return filtered_entries
+
+
 def get_exchange_rate_for_currency(
     target_currency: str, api_key: Optional[str] = None, config: Optional[dict] = None
 ) -> Optional[float]:
@@ -168,7 +187,22 @@ def main() -> int:
                 print("No log entries found in the specified date range.")
                 return 0
 
-        # 6. Get exchange rate for currency conversion
+        # 6. Filter by cost calculation options
+        if args.cost_calculation_mode != "mixed":
+            if args.debug:
+                logger.info(f"Filtering by cost options (mode: {args.cost_calculation_mode})...")
+            cost_filtered_entries = filter_entries_by_cost_options(all_entries, cost_calculation_mode=args.cost_calculation_mode)
+            if args.debug:
+                logger.info(f"After cost filtering: {len(cost_filtered_entries)} entries")
+            all_entries = cost_filtered_entries
+
+            if not all_entries:
+                if args.debug:
+                    logger.warning("No log entries found matching the cost filtering criteria")
+                print("No log entries found matching the cost filtering criteria.")
+                return 0
+
+        # 7. Get exchange rate for currency conversion
         exchange_rate = None
         target_currency = None
         if args.currency:
@@ -217,6 +251,7 @@ def main() -> int:
                 limit=args.limit,
                 sort_by=args.sort_field,
                 sort_desc=(args.sort == "desc"),
+                show_estimated_costs=args.show_estimated_costs,
             )
 
             # Output results

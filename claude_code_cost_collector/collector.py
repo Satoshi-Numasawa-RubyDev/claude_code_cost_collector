@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 from typing import List, Union
 
+from .constants import SUPPORTED_LOG_EXTENSIONS
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,17 +43,18 @@ def collect_log_files(directory: Union[str, Path]) -> List[Path]:
         raise PermissionError(f"No read permission for directory: {dir_path}")
 
     try:
-        # Recursively search for JSON and JSONL files
-        json_files = list(dir_path.rglob("*.json"))
-        jsonl_files = list(dir_path.rglob("*.jsonl"))
-        json_files.extend(jsonl_files)
+        # Recursively search for supported log files
+        log_files: List[Path] = []
+        for ext in SUPPORTED_LOG_EXTENSIONS:
+            pattern = f"*{ext}"
+            log_files.extend(dir_path.rglob(pattern))
 
-        logger.info(f"Found {len(json_files)} JSON/JSONL files in {dir_path}")
+        logger.info(f"Found {len(log_files)} log files in {dir_path}")
 
         # Sort by file modification time (newest first)
-        json_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+        log_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
 
-        return json_files
+        return log_files
 
     except PermissionError as e:
         logger.error(f"Permission denied while accessing {dir_path}: {e}")
