@@ -276,6 +276,7 @@ class TestErrorHandling:
         """Test error handling when PricingError occurs in calculate_cost."""
         # Create a mock pricing manager that raises PricingError
         from unittest.mock import Mock
+
         from claude_code_cost_collector.model_pricing import PricingError
 
         mock_manager = Mock()
@@ -291,6 +292,7 @@ class TestErrorHandling:
         """Test error handling when PricingError occurs in calculate_cost_breakdown."""
         # Create a mock pricing manager that raises PricingError
         from unittest.mock import Mock
+
         from claude_code_cost_collector.model_pricing import PricingError
 
         mock_manager = Mock()

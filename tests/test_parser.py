@@ -721,3 +721,271 @@ class TestLogParserV109Format:
 
         finally:
             temp_path.unlink()
+
+    def test_parse_v1_0_9_partial_data_resilience(self):
+        """Test that v1.0.9 parser handles partial/missing usage data gracefully."""
+        raw_entry = {
+            "type": "assistant",
+            "uuid": "test-uuid-partial",
+            "sessionId": "partial-data-session",
+            "timestamp": "2025-06-03T12:35:42.663Z",
+            "version": "1.0.9",
+            "message": {
+                "role": "assistant",
+                "model": "claude-3-5-sonnet-20241022",
+                "content": "Test response",
+                "usage": {
+                    "input_tokens": 75,
+                    # Missing output_tokens, cache fields
+                },
+                "ttftMs": 856,
+            },
+        }
+
+        parser = LogParser()
+        entry = parser.parse_log_entry(raw_entry, "test_project", Path("/test/path"))
+
+        assert entry is not None
+        assert entry.input_tokens == 75
+        assert entry.output_tokens == 0  # Should default to 0
+        assert entry.cache_creation_tokens is None
+        assert entry.cache_read_tokens is None
+        assert entry.total_tokens == 75  # Only input tokens
+        # Should still estimate cost from available tokens
+        assert entry.cost_usd >= 0
+
+    def test_parse_v1_0_9_with_real_sample_structure(self):
+        """Test parsing with structure matching actual v1.0.9 samples."""
+        raw_entry = {
+            "parentUuid": "aa87c72a-a2b7-4db0-93f3-0892afe18d40",
+            "isSidechain": False,
+            "userType": "external",
+            "cwd": "/Users/testuser/source/project",
+            "sessionId": "0da08427-d1b9-4055-8314-83d3f147b157",
+            "version": "1.0.9",
+            "message": {
+                "id": "msg_bdrk_01D6C9sdmn7o8sNa3ZCqrBeV",
+                "type": "message",
+                "role": "assistant",
+                "model": "claude-sonnet-4-20250514",
+                "content": [
+                    {"type": "text", "text": "Sample response text"},
+                    {"type": "tool_use", "id": "toolu_123", "name": "Read", "input": {"file_path": "/test/path"}},
+                ],
+                "stop_reason": "tool_use",
+                "stop_sequence": None,
+                "usage": {
+                    "input_tokens": 4,
+                    "cache_creation_input_tokens": 6094,
+                    "cache_read_input_tokens": 13558,
+                    "output_tokens": 252,
+                },
+                "ttftMs": 5742,
+            },
+            "type": "assistant",
+            "uuid": "13f77474-e274-4692-ad57-772d224a5e06",
+            "timestamp": "2025-06-03T12:35:51.791Z",
+        }
+
+        parser = LogParser()
+        entry = parser.parse_log_entry(raw_entry, "test_project", Path("/test/path"))
+
+        assert entry is not None
+        assert entry.session_id == "0da08427-d1b9-4055-8314-83d3f147b157"
+        assert entry.input_tokens == 4
+        assert entry.output_tokens == 252
+        assert entry.cache_creation_tokens == 6094
+        assert entry.cache_read_tokens == 13558
+        assert entry.total_tokens == 19908  # 4 + 252 + 6094 + 13558
+        assert entry.model == "claude-sonnet-4-20250514"
+        assert entry.cost_usd > 0  # Should estimate cost
+
+        # Check that additional fields are stored in raw_data
+        assert "_parsed_uuid" in entry.raw_data
+        assert "_parsed_version" in entry.raw_data
+        assert "_parsed_ttftMs" in entry.raw_data
+        assert entry.raw_data["_parsed_uuid"] == "13f77474-e274-4692-ad57-772d224a5e06"
+        assert entry.raw_data["_parsed_version"] == "1.0.9"
+        assert entry.raw_data["_parsed_ttftMs"] == 5742
+
+    def test_parse_v1_0_9_usage_extraction_edge_cases(self):
+        """Test edge cases in v1.0.9 usage information extraction."""
+        # Test case 1: Empty usage object
+        raw_entry1 = {
+            "type": "assistant",
+            "uuid": "test-uuid-empty",
+            "sessionId": "empty-usage-session",
+            "timestamp": "2025-06-03T12:35:42.663Z",
+            "version": "1.0.9",
+            "message": {
+                "role": "assistant",
+                "model": "claude-3-5-sonnet-20241022",
+                "usage": {},  # Empty usage
+                "ttftMs": 1000,
+            },
+        }
+
+        parser = LogParser()
+        entry1 = parser.parse_log_entry(raw_entry1, "test_project", Path("/test/path"))
+
+        assert entry1 is not None
+        assert entry1.input_tokens == 0
+        assert entry1.output_tokens == 0
+        assert entry1.cache_creation_tokens is None
+        assert entry1.cache_read_tokens is None
+
+        # Test case 2: Non-integer token values (should be converted)
+        raw_entry2 = {
+            "type": "assistant",
+            "uuid": "test-uuid-convert",
+            "sessionId": "convert-session",
+            "timestamp": "2025-06-03T12:35:42.663Z",
+            "version": "1.0.9",
+            "message": {
+                "role": "assistant",
+                "model": "claude-3-5-sonnet-20241022",
+                "usage": {
+                    "input_tokens": "50",  # String that should be converted
+                    "output_tokens": 25.0,  # Float that should be converted
+                    "cache_creation_input_tokens": "100",
+                    "cache_read_input_tokens": None,  # None value
+                },
+                "ttftMs": 1000,
+            },
+        }
+
+        entry2 = parser.parse_log_entry(raw_entry2, "test_project", Path("/test/path"))
+
+        assert entry2 is not None
+        assert entry2.input_tokens == 50
+        assert entry2.output_tokens == 25
+        assert entry2.cache_creation_tokens == 100
+        assert entry2.cache_read_tokens is None
+
+    def test_parse_v1_0_9_format_detection_confidence(self):
+        """Test that v1.0.9 format detection works correctly with various entry configurations."""
+        # Test strong v1.0.9 indicators
+        strong_v109_entry = {
+            "type": "assistant",
+            "uuid": "strong-uuid",
+            "sessionId": "strong-session",
+            "timestamp": "2025-06-03T12:35:42.663Z",
+            "version": "1.0.9",
+            "message": {
+                "role": "assistant",
+                "model": "claude-3-5-sonnet-20241022",
+                "content": "Response",
+                "usage": {"input_tokens": 10, "output_tokens": 20},
+                "ttftMs": 1000,
+            },
+            # Notably missing costUSD
+        }
+
+        parser = LogParser()
+        entry = parser.parse_log_entry(strong_v109_entry, "test_project", Path("/test/path"))
+
+        assert entry is not None
+        assert entry.session_id == "strong-session"
+
+        # Test weak v1.0.9 indicators (should still parse if costUSD is missing)
+        weak_v109_entry = {
+            "type": "assistant",
+            "sessionId": "weak-session",
+            "timestamp": "2025-06-03T12:35:42.663Z",
+            "message": {
+                "role": "assistant",
+                "model": "claude-3-5-sonnet-20241022",
+                "usage": {"input_tokens": 10, "output_tokens": 20},
+            },
+            # Missing uuid, version, ttftMs, and costUSD
+        }
+
+        # This should not be detected as v1.0.9 and should return None
+        entry_weak = parser.parse_log_entry(weak_v109_entry, "test_project", Path("/test/path"))
+        assert entry_weak is None  # Should not parse as either format
+
+    def test_parse_v1_0_9_fallback_behavior(self):
+        """Test fallback behavior when v1.0.9 parsing encounters errors."""
+        # Entry with invalid timestamp
+        raw_entry_bad_timestamp = {
+            "type": "assistant",
+            "uuid": "bad-timestamp-uuid",
+            "sessionId": "bad-timestamp-session",
+            "timestamp": "invalid-timestamp-format",
+            "version": "1.0.9",
+            "message": {
+                "role": "assistant",
+                "model": "claude-3-5-sonnet-20241022",
+                "usage": {"input_tokens": 10, "output_tokens": 20},
+                "ttftMs": 1000,
+            },
+        }
+
+        parser = LogParser()
+        with pytest.raises(LogParseError, match="Invalid timestamp format"):
+            parser.parse_log_entry(raw_entry_bad_timestamp, "test_project", Path("/test/path"))
+
+    def test_parse_jsonl_file_with_v1_0_9_entries(self):
+        """Test parsing JSONL file containing v1.0.9 format entries."""
+        # Create JSONL content with multiple v1.0.9 entries
+        jsonl_lines = [
+            # Summary entry (should be skipped)
+            '{"type":"summary","summary":"Test Summary","leafUuid":"summary-uuid"}',
+            # v1.0.9 assistant entry
+            (
+                '{"type":"assistant","uuid":"jsonl-uuid-1","sessionId":"jsonl-session-1",'
+                '"timestamp":"2025-06-03T12:35:42.663Z","version":"1.0.9",'
+                '"message":{"role":"assistant","model":"claude-3-5-sonnet-20241022",'
+                '"content":"Response 1","usage":{"input_tokens":50,"output_tokens":25},"ttftMs":800}}'
+            ),
+            # Another v1.0.9 assistant entry
+            (
+                '{"type":"assistant","uuid":"jsonl-uuid-2","sessionId":"jsonl-session-2",'
+                '"timestamp":"2025-06-03T12:40:00.000Z","version":"1.0.9",'
+                '"message":{"role":"assistant","model":"claude-3-5-sonnet-20241022",'
+                '"content":"Response 2","usage":{"input_tokens":75,"output_tokens":40,'
+                '"cache_creation_input_tokens":100},"ttftMs":1200}}'
+            ),
+        ]
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
+            f.write("\n".join(jsonl_lines))
+            temp_path = Path(f.name)
+
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                projects_dir = Path(temp_dir) / "projects" / "jsonl_test_project"
+                projects_dir.mkdir(parents=True)
+                log_file = projects_dir / "logs.jsonl"
+
+                with open(temp_path, "r", encoding="utf-8") as src:
+                    with open(log_file, "w", encoding="utf-8") as dst:
+                        dst.write(src.read())
+
+                entries = parse_log_file(log_file)
+
+            # Should parse 2 assistant entries (summary entry skipped)
+            assert len(entries) == 2
+
+            entry1 = next((e for e in entries if e.session_id == "jsonl-session-1"), None)
+            entry2 = next((e for e in entries if e.session_id == "jsonl-session-2"), None)
+
+            assert entry1 is not None
+            assert entry2 is not None
+
+            # Check first entry
+            assert entry1.input_tokens == 50
+            assert entry1.output_tokens == 25
+            assert entry1.cache_creation_tokens is None
+            assert entry1.total_tokens == 75
+            assert entry1.cost_usd > 0
+
+            # Check second entry (with cache tokens)
+            assert entry2.input_tokens == 75
+            assert entry2.output_tokens == 40
+            assert entry2.cache_creation_tokens == 100
+            assert entry2.total_tokens == 215  # 75 + 40 + 100
+            assert entry2.cost_usd > 0
+
+        finally:
+            temp_path.unlink()

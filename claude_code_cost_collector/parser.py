@@ -121,8 +121,8 @@ class LogParser:
         except ValueError as e:
             raise LogParseError(f"Invalid timestamp format: {e}")
 
-        # Extract usage information
-        usage_info = _extract_usage_info(raw_entry)
+        # Extract usage information - v1.0.9 specific extraction
+        usage_info = self._extract_v1_0_9_usage_info(raw_entry)
 
         # Generate date strings for aggregation with timezone consideration
         display_timestamp = _convert_to_target_timezone(timestamp, target_timezone)
@@ -146,12 +146,24 @@ class LogParser:
                 cache_read_tokens=cache_read_tokens,
             )
             estimated_cost = self.cost_calculator.calculate_cost(model, token_usage)
+
+            # Log cost estimation for transparency
+            logger.debug(
+                f"Estimated cost for model '{model}': ${estimated_cost:.6f} "
+                f"(input: {input_tokens}, output: {output_tokens}, "
+                f"cache_creation: {cache_creation_tokens}, cache_read: {cache_read_tokens})"
+            )
         except Exception as e:
             logger.warning(f"Failed to estimate cost for model '{model}': {e}")
             estimated_cost = 0.0
 
+        # Extract additional v1.0.9 fields if available
+        uuid = raw_entry.get("uuid")
+        version = raw_entry.get("version")
+        ttft_ms = raw_entry.get("message", {}).get("ttftMs") if isinstance(raw_entry.get("message"), dict) else None
+
         try:
-            return ProcessedLogEntry(
+            processed_entry = ProcessedLogEntry(
                 timestamp=timestamp,
                 date_str=date_str,
                 month_str=month_str,
@@ -166,8 +178,67 @@ class LogParser:
                 cache_read_tokens=usage_info["cache_read_tokens"],
                 raw_data=raw_entry,
             )
+
+            # Store additional v1.0.9 fields in raw_data for potential future use
+            if uuid and processed_entry.raw_data is not None:
+                processed_entry.raw_data["_parsed_uuid"] = uuid
+            if version and processed_entry.raw_data is not None:
+                processed_entry.raw_data["_parsed_version"] = version
+            if ttft_ms and processed_entry.raw_data is not None:
+                processed_entry.raw_data["_parsed_ttftMs"] = ttft_ms
+
+            return processed_entry
+
         except (ValueError, TypeError) as e:
             raise LogParseError(f"Failed to create ProcessedLogEntry for v1.0.9 format: {e}")
+
+    def _extract_v1_0_9_usage_info(self, raw_entry: Dict[str, Any]) -> Dict[str, int | None]:
+        """
+        Extract token usage information from v1.0.9 format entry.
+
+        Args:
+            raw_entry: Raw log entry dictionary
+
+        Returns:
+            Dictionary containing usage information
+        """
+        usage_info: Dict[str, int | None] = {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cache_creation_tokens": None,
+            "cache_read_tokens": None,
+        }
+
+        try:
+            # Extract from message.usage (primary location for v1.0.9)
+            if "message" in raw_entry and isinstance(raw_entry["message"], dict):
+                usage = raw_entry["message"].get("usage", {})
+                if isinstance(usage, dict):
+                    # Standard token fields
+                    usage_info["input_tokens"] = int(usage.get("input_tokens", 0))
+                    usage_info["output_tokens"] = int(usage.get("output_tokens", 0))
+
+                    # Cache-related fields with proper v1.0.9 field names
+                    cache_creation = usage.get("cache_creation_input_tokens")
+                    if cache_creation is not None:
+                        usage_info["cache_creation_tokens"] = int(cache_creation)
+
+                    cache_read = usage.get("cache_read_input_tokens")
+                    if cache_read is not None:
+                        usage_info["cache_read_tokens"] = int(cache_read)
+
+            # Fallback to top-level fields if message.usage is missing or incomplete
+            if usage_info["input_tokens"] == 0 and "input_tokens" in raw_entry:
+                usage_info["input_tokens"] = int(raw_entry.get("input_tokens", 0))
+            if usage_info["output_tokens"] == 0 and "output_tokens" in raw_entry:
+                usage_info["output_tokens"] = int(raw_entry.get("output_tokens", 0))
+
+        except (ValueError, TypeError) as e:
+            logger.debug(f"Error extracting usage info from v1.0.9 entry: {e}")
+            # Use fallback values if extraction fails
+            pass
+
+        return usage_info
 
 
 def parse_log_file(log_file_path: Path, target_timezone: Optional[str] = None) -> List[ProcessedLogEntry]:
