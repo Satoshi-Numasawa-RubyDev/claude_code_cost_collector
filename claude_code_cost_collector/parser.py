@@ -182,6 +182,8 @@ class LogParser:
                 cache_creation_tokens=usage_info["cache_creation_tokens"],
                 cache_read_tokens=usage_info["cache_read_tokens"],
                 raw_data=raw_entry,
+                cost_estimated=True,
+                cost_confidence="medium",
             )
 
             # Store additional v1.0.9 fields in raw_data for potential future use

@@ -32,6 +32,7 @@ def format_data(
     limit: Optional[int] = None,
     sort_by: Optional[str] = None,
     sort_desc: bool = False,
+    show_estimated_costs: bool = True,
 ) -> str:
     """Main formatting function that dispatches to appropriate formatter.
 
@@ -43,6 +44,7 @@ def format_data(
         limit: Maximum number of results to display (None for no limit)
         sort_by: Sort field ('input', 'output', 'total', 'cost') - if None, use existing order
         sort_desc: Sort in descending order (default: False)
+        show_estimated_costs: Whether to show asterisk indicators for estimated costs (default: True)
 
     Returns:
         Formatted string ready for output
@@ -61,13 +63,13 @@ def format_data(
 
     try:
         if output_format == "text":
-            return _format_text_table(data, granularity, target_currency, sort_by)
+            return _format_text_table(data, granularity, target_currency, sort_by, show_estimated_costs)
         elif output_format == "json":
-            return _format_json(data, granularity, target_currency)
+            return _format_json(data, granularity, target_currency, show_estimated_costs)
         elif output_format == "yaml":
-            return _format_yaml(data, granularity, target_currency)
+            return _format_yaml(data, granularity, target_currency, show_estimated_costs)
         elif output_format == "csv":
-            return _format_csv(data, granularity, target_currency)
+            return _format_csv(data, granularity, target_currency, show_estimated_costs)
         else:
             # This should never be reached due to the check above
             raise FormatterError(f"Unknown output format: {output_format}")
@@ -80,6 +82,7 @@ def _format_text_table(
     granularity: str,
     target_currency: Optional[str] = None,
     sort_by: Optional[str] = None,
+    show_estimated_costs: bool = True,
 ) -> str:
     """Format data as a text table using rich library.
 
@@ -93,13 +96,16 @@ def _format_text_table(
         Formatted text table as string
     """
     if isinstance(data, list):
-        return _format_individual_entries_as_text(data, target_currency)
+        return _format_individual_entries_as_text(data, target_currency, show_estimated_costs)
     else:
-        return _format_aggregated_data_as_text(data, granularity, target_currency, sort_by)
+        return _format_aggregated_data_as_text(data, granularity, target_currency, sort_by, show_estimated_costs)
 
 
 def _format_json(
-    data: Union[ProcessedLogEntries, AggregatedData], granularity: str, target_currency: Optional[str] = None
+    data: Union[ProcessedLogEntries, AggregatedData],
+    granularity: str,
+    target_currency: Optional[str] = None,
+    show_estimated_costs: bool = True,
 ) -> str:
     """Format data as JSON.
 
@@ -192,7 +198,10 @@ def _format_json(
 
 
 def _format_yaml(
-    data: Union[ProcessedLogEntries, AggregatedData], granularity: str, target_currency: Optional[str] = None
+    data: Union[ProcessedLogEntries, AggregatedData],
+    granularity: str,
+    target_currency: Optional[str] = None,
+    show_estimated_costs: bool = True,
 ) -> str:
     """Format data as YAML.
 
@@ -230,7 +239,12 @@ def _format_yaml(
     return str(result)
 
 
-def _format_csv(data: Union[ProcessedLogEntries, AggregatedData], granularity: str, target_currency: Optional[str] = None) -> str:
+def _format_csv(
+    data: Union[ProcessedLogEntries, AggregatedData],
+    granularity: str,
+    target_currency: Optional[str] = None,
+    show_estimated_costs: bool = True,
+) -> str:
     """Format data as CSV.
 
     This is a stub implementation that will be detailed in task 6.4.
@@ -318,7 +332,9 @@ def _format_csv(data: Union[ProcessedLogEntries, AggregatedData], granularity: s
     return output.getvalue()
 
 
-def _format_individual_entries_as_text(entries: ProcessedLogEntries, target_currency: Optional[str] = None) -> str:
+def _format_individual_entries_as_text(
+    entries: ProcessedLogEntries, target_currency: Optional[str] = None, show_estimated_costs: bool = True
+) -> str:
     """Helper function to format individual log entries as text table.
 
     Args:
@@ -361,7 +377,7 @@ def _format_individual_entries_as_text(entries: ProcessedLogEntries, target_curr
 
         # Format cost with estimated indicator
         cost_str = f"${entry.cost_usd:.4f}"
-        if hasattr(entry, "cost_estimated") and entry.cost_estimated:
+        if show_estimated_costs and hasattr(entry, "cost_estimated") and entry.cost_estimated:
             cost_str += "*"
 
         row_data = [
@@ -389,7 +405,7 @@ def _format_individual_entries_as_text(entries: ProcessedLogEntries, target_curr
     # Check if any entry has estimated costs for total row display
     has_estimated = any(hasattr(e, "cost_estimated") and e.cost_estimated for e in entries)
     total_cost_str = f"${total_cost_usd:.4f}"
-    if has_estimated:
+    if show_estimated_costs and has_estimated:
         total_cost_str += "*"
 
     # Add total row
@@ -416,14 +432,18 @@ def _format_individual_entries_as_text(entries: ProcessedLogEntries, target_curr
         console.print(table)
 
         # Add estimated cost explanation if any costs are estimated (individual entries)
-        if has_estimated:
+        if show_estimated_costs and has_estimated:
             console.print("\n[yellow]* Estimated cost based on token count and model pricing[/yellow]")
 
     return capture.get()
 
 
 def _format_aggregated_data_as_text(
-    data: AggregatedData, granularity: str, target_currency: Optional[str] = None, sort_by: Optional[str] = None
+    data: AggregatedData,
+    granularity: str,
+    target_currency: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    show_estimated_costs: bool = True,
 ) -> str:
     """Helper function to format aggregated data as text table.
 
@@ -518,7 +538,7 @@ def _format_aggregated_data_as_text(
 
         # Format cost with estimated indicator
         cost_str = f"${cost_usd:.4f}"
-        if values.get("has_estimated_costs", False):
+        if show_estimated_costs and values.get("has_estimated_costs", False):
             cost_str += "*"
 
         row_data = [
@@ -541,7 +561,7 @@ def _format_aggregated_data_as_text(
     # Check if any aggregated data has estimated costs for total row display
     has_estimated_total = any(values.get("has_estimated_costs", False) for key, values in sorted_data)
     total_cost_str = f"${total_cost_usd:.4f}"
-    if has_estimated_total:
+    if show_estimated_costs and has_estimated_total:
         total_cost_str += "*"
 
     # Add total row
@@ -567,7 +587,7 @@ def _format_aggregated_data_as_text(
         console.print(table)
 
         # Add estimated cost explanation if any costs are estimated (aggregated data)
-        if has_estimated_total:
+        if show_estimated_costs and has_estimated_total:
             console.print("\n[yellow]* Estimated cost based on token count and model pricing[/yellow]")
 
     return capture.get()

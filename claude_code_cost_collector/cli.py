@@ -185,6 +185,21 @@ def create_parser() -> argparse.ArgumentParser:
         metavar="FIELD",
     )
 
+    # Cost estimation options
+    parser.add_argument(
+        "--show-estimated-costs",
+        action="store_true",
+        help="Show estimated costs when exact costs are unavailable (marked with asterisk)",
+    )
+
+    parser.add_argument(
+        "--cost-calculation-mode",
+        choices=["exact", "estimated", "mixed"],
+        default="mixed",
+        help="Cost calculation mode: exact (only exact costs), estimated (only estimates), mixed (both) (default: %(default)s)",
+        metavar="MODE",
+    )
+
     return parser
 
 
