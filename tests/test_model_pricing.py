@@ -313,8 +313,8 @@ class TestModelPricingManager:
         # Test claude-sonnet-4 pricing
         sonnet4_pricing = manager.get_pricing("claude-sonnet-4")
         assert sonnet4_pricing is not None
-        assert sonnet4_pricing.input_price_per_million == 15.0
-        assert sonnet4_pricing.output_price_per_million == 75.0
+        assert sonnet4_pricing.input_price_per_million == 3.0
+        assert sonnet4_pricing.output_price_per_million == 15.0
 
         # Test claude-3-haiku pricing
         haiku_pricing = manager.get_pricing("claude-3-haiku")
@@ -773,9 +773,12 @@ class TestNewFormatIntegration:
             assert pricing.cache_read_price_per_million >= 0
 
             # Output should typically be more expensive than input
-            if model in ["claude-sonnet-4-20250514", "claude-opus-4-20250514", "claude-sonnet-4", "claude-opus-4"]:
-                # High-end models should have higher pricing
+            if model in ["claude-opus-4-20250514", "claude-opus-4"]:
+                # Opus models should have higher pricing
                 assert pricing.input_price_per_million >= 10.0
+            elif model in ["claude-sonnet-4-20250514", "claude-sonnet-4"]:
+                # Sonnet-4 models should have reasonable pricing
+                assert pricing.input_price_per_million >= 3.0
 
             # Check confidence level
             confidence = manager.get_confidence_level(model)

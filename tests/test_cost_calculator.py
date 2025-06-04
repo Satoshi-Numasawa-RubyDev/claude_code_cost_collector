@@ -450,11 +450,11 @@ class TestIntegration:
         cost, confidence = self.calculator.estimate_cost_with_confidence("claude-sonnet-4-20250514", usage)
 
         # Verify the calculation
-        # Input: 4/1M * $15 = $0.00006
-        # Output: 252/1M * $75 = $0.0189
-        # Cache creation: 6094/1M * $18.75 = $0.114263
-        # Cache read: 13558/1M * $1.5 = $0.020337
-        expected_cost = (4 / 1_000_000) * 15.0 + (252 / 1_000_000) * 75.0 + (6094 / 1_000_000) * 18.75 + (13558 / 1_000_000) * 1.5
+        # Input: 4/1M * $3.0 = $0.000012
+        # Output: 252/1M * $15.0 = $0.00378
+        # Cache creation: 6094/1M * $3.75 = $0.0228525
+        # Cache read: 13558/1M * $0.3 = $0.0040674
+        expected_cost = (4 / 1_000_000) * 3.0 + (252 / 1_000_000) * 15.0 + (6094 / 1_000_000) * 3.75 + (13558 / 1_000_000) * 0.3
 
         assert abs(cost - expected_cost) < 1e-6
         assert confidence == "high"
