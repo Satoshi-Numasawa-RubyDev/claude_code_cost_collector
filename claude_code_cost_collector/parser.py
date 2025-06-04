@@ -11,15 +11,236 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .cost_calculator import CostCalculator, TokenUsage, create_default_cost_calculator
+from .exceptions import LogParseError
+from .format_detector import FormatDetector, LogFormat
 from .models import ProcessedLogEntry
 
 logger = logging.getLogger(__name__)
 
 
-class LogParseError(Exception):
-    """Exception raised when log parsing fails."""
+class LogParser:
+    """
+    Enhanced log parser with format detection and cost calculation capabilities.
 
-    pass
+    This class provides automatic format detection and cost estimation for
+    Claude CLI logs that may not contain direct cost information.
+    """
+
+    def __init__(self, cost_calculator: Optional[CostCalculator] = None):
+        """
+        Initialize the log parser.
+
+        Args:
+            cost_calculator: Optional cost calculator. If None, a default one will be created.
+        """
+        self.cost_calculator = cost_calculator or create_default_cost_calculator()
+
+    def parse_log_entry(
+        self, raw_entry: Dict[str, Any], project_name: str, file_path: Path, target_timezone: Optional[str] = None
+    ) -> Optional[ProcessedLogEntry]:
+        """
+        Parse a single log entry with automatic format detection.
+
+        Args:
+            raw_entry: Raw log entry dictionary
+            project_name: Project name extracted from file path
+            file_path: Source file path for context
+            target_timezone: Target timezone for date calculation
+
+        Returns:
+            ProcessedLogEntry or None if entry should be skipped
+
+        Raises:
+            LogParseError: If required fields are missing or invalid
+        """
+        # Detect format
+        format_type = FormatDetector.detect_entry_format(raw_entry)
+
+        # Parse based on detected format
+        if format_type == LogFormat.LEGACY:
+            return self._parse_legacy_format(raw_entry, project_name, file_path, target_timezone)
+        elif format_type == LogFormat.V1_0_9:
+            return self._parse_v1_0_9_format(raw_entry, project_name, file_path, target_timezone)
+        else:
+            # Unknown format - try legacy format as fallback
+            try:
+                return self._parse_legacy_format(raw_entry, project_name, file_path, target_timezone)
+            except LogParseError:
+                # If legacy parsing fails, skip this entry
+                logger.debug(f"Skipping entry with unknown format: {raw_entry.get('type', 'unknown')}")
+                return None
+
+    def _parse_legacy_format(
+        self, raw_entry: Dict[str, Any], project_name: str, file_path: Path, target_timezone: Optional[str] = None
+    ) -> Optional[ProcessedLogEntry]:
+        """Parse entry using legacy format logic (existing implementation)."""
+        return _parse_single_log_entry(raw_entry, project_name, file_path, target_timezone)
+
+    def _parse_v1_0_9_format(
+        self, raw_entry: Dict[str, Any], project_name: str, file_path: Path, target_timezone: Optional[str] = None
+    ) -> Optional[ProcessedLogEntry]:
+        """
+        Parse entry using v1.0.9 format logic with cost estimation.
+
+        Args:
+            raw_entry: Raw log entry dictionary
+            project_name: Project name extracted from file path
+            file_path: Source file path for context
+            target_timezone: Target timezone for date calculation
+
+        Returns:
+            ProcessedLogEntry or None if entry should be skipped
+
+        Raises:
+            LogParseError: If required fields are missing or invalid
+        """
+        # Only process assistant entries
+        if raw_entry.get("type") != "assistant":
+            return None
+
+        # Skip API error messages (they use synthetic models and have no meaningful usage data)
+        if raw_entry.get("isApiErrorMessage", False):
+            logger.debug(f"Skipping API error message entry: {raw_entry.get('message', {}).get('content', 'N/A')}")
+            return None
+
+        # Check for required fields (costUSD is not required for v1.0.9)
+        required_fields = ["timestamp", "sessionId"]
+        missing_fields = [field for field in required_fields if field not in raw_entry]
+
+        # Check for model field in message
+        if "message" not in raw_entry or "model" not in raw_entry.get("message", {}):
+            missing_fields.append("message.model")
+
+        if missing_fields:
+            raise LogParseError(f"Missing required fields for v1.0.9 format: {missing_fields}")
+
+        # Parse timestamp
+        try:
+            timestamp = _parse_timestamp(raw_entry["timestamp"])
+        except ValueError as e:
+            raise LogParseError(f"Invalid timestamp format: {e}")
+
+        # Extract usage information - v1.0.9 specific extraction
+        usage_info = self._extract_v1_0_9_usage_info(raw_entry)
+
+        # Generate date strings for aggregation with timezone consideration
+        display_timestamp = _convert_to_target_timezone(timestamp, target_timezone)
+        date_str = display_timestamp.strftime("%Y-%m-%d")
+        month_str = display_timestamp.strftime("%Y-%m")
+
+        # Calculate total tokens
+        cache_creation_tokens = usage_info["cache_creation_tokens"] or 0
+        cache_read_tokens = usage_info["cache_read_tokens"] or 0
+        input_tokens = usage_info["input_tokens"] or 0
+        output_tokens = usage_info["output_tokens"] or 0
+        total_tokens = input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens
+
+        # Estimate cost using cost calculator
+        model = str(raw_entry["message"]["model"])
+        try:
+            token_usage = TokenUsage(
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cache_creation_tokens=cache_creation_tokens,
+                cache_read_tokens=cache_read_tokens,
+            )
+            estimated_cost = self.cost_calculator.calculate_cost(model, token_usage)
+
+            # Log cost estimation for transparency
+            logger.debug(
+                f"Estimated cost for model '{model}': ${estimated_cost:.6f} "
+                f"(input: {input_tokens}, output: {output_tokens}, "
+                f"cache_creation: {cache_creation_tokens}, cache_read: {cache_read_tokens})"
+            )
+        except Exception as e:
+            logger.warning(f"Failed to estimate cost for model '{model}': {e}")
+            estimated_cost = 0.0
+
+        # Extract additional v1.0.9 fields if available
+        uuid = raw_entry.get("uuid")
+        version = raw_entry.get("version")
+        ttft_ms = raw_entry.get("message", {}).get("ttftMs") if isinstance(raw_entry.get("message"), dict) else None
+
+        try:
+            processed_entry = ProcessedLogEntry(
+                timestamp=timestamp,
+                date_str=date_str,
+                month_str=month_str,
+                project_name=project_name,
+                session_id=str(raw_entry["sessionId"]),
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                total_tokens=total_tokens,
+                cost_usd=estimated_cost,
+                model=model,
+                cache_creation_tokens=usage_info["cache_creation_tokens"],
+                cache_read_tokens=usage_info["cache_read_tokens"],
+                raw_data=raw_entry,
+                cost_estimated=True,
+                cost_confidence="medium",
+            )
+
+            # Store additional v1.0.9 fields in raw_data for potential future use
+            if uuid and processed_entry.raw_data is not None:
+                processed_entry.raw_data["_parsed_uuid"] = uuid
+            if version and processed_entry.raw_data is not None:
+                processed_entry.raw_data["_parsed_version"] = version
+            if ttft_ms and processed_entry.raw_data is not None:
+                processed_entry.raw_data["_parsed_ttftMs"] = ttft_ms
+
+            return processed_entry
+
+        except (ValueError, TypeError) as e:
+            raise LogParseError(f"Failed to create ProcessedLogEntry for v1.0.9 format: {e}")
+
+    def _extract_v1_0_9_usage_info(self, raw_entry: Dict[str, Any]) -> Dict[str, int | None]:
+        """
+        Extract token usage information from v1.0.9 format entry.
+
+        Args:
+            raw_entry: Raw log entry dictionary
+
+        Returns:
+            Dictionary containing usage information
+        """
+        usage_info: Dict[str, int | None] = {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cache_creation_tokens": None,
+            "cache_read_tokens": None,
+        }
+
+        try:
+            # Extract from message.usage (primary location for v1.0.9)
+            if "message" in raw_entry and isinstance(raw_entry["message"], dict):
+                usage = raw_entry["message"].get("usage", {})
+                if isinstance(usage, dict):
+                    # Standard token fields
+                    usage_info["input_tokens"] = int(usage.get("input_tokens", 0))
+                    usage_info["output_tokens"] = int(usage.get("output_tokens", 0))
+
+                    # Cache-related fields with proper v1.0.9 field names
+                    cache_creation = usage.get("cache_creation_input_tokens")
+                    if cache_creation is not None:
+                        usage_info["cache_creation_tokens"] = int(cache_creation)
+
+                    cache_read = usage.get("cache_read_input_tokens")
+                    if cache_read is not None:
+                        usage_info["cache_read_tokens"] = int(cache_read)
+
+            # Fallback to top-level fields if message.usage is missing or incomplete
+            if usage_info["input_tokens"] == 0 and "input_tokens" in raw_entry:
+                usage_info["input_tokens"] = int(raw_entry.get("input_tokens", 0))
+            if usage_info["output_tokens"] == 0 and "output_tokens" in raw_entry:
+                usage_info["output_tokens"] = int(raw_entry.get("output_tokens", 0))
+
+        except (ValueError, TypeError) as e:
+            logger.debug(f"Error extracting usage info from v1.0.9 entry: {e}")
+            # Use fallback values if extraction fails
+            pass
+
+        return usage_info
 
 
 def parse_log_file(log_file_path: Path, target_timezone: Optional[str] = None) -> List[ProcessedLogEntry]:
@@ -75,9 +296,12 @@ def parse_log_file(log_file_path: Path, target_timezone: Optional[str] = None) -
     processed_entries = []
     project_name = _extract_project_name_from_path(log_file_path)
 
+    # Create parser instance with automatic format detection
+    parser = LogParser()
+
     for i, raw_entry in enumerate(raw_entries):
         try:
-            processed_entry = _parse_single_log_entry(raw_entry, project_name, log_file_path, target_timezone)
+            processed_entry = parser.parse_log_entry(raw_entry, project_name, log_file_path, target_timezone)
             if processed_entry:
                 processed_entries.append(processed_entry)
         except Exception as e:

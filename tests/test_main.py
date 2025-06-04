@@ -10,6 +10,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from claude_code_cost_collector.main import (
+    filter_entries_by_cost_options,
     filter_entries_by_date_range,
     main,
     setup_logging,
@@ -124,6 +125,87 @@ class TestFilterEntriesByDateRange:
         assert len(result) == 0
 
 
+class TestFilterEntriesByCostOptions:
+    """Test filter_entries_by_cost_options function."""
+
+    def create_sample_entry(self, cost_estimated: bool = False, cost_confidence: str = "high") -> ProcessedLogEntry:
+        """Create a sample log entry for testing."""
+        return ProcessedLogEntry(
+            timestamp=datetime(2025, 5, 9, 12, 0, 0),
+            date_str="2025-05-09",
+            month_str="2025-05",
+            project_name="test_project",
+            session_id="test_session",
+            input_tokens=100,
+            output_tokens=50,
+            total_tokens=150,
+            cost_usd=0.01,
+            model="claude-3",
+            cost_estimated=cost_estimated,
+            cost_confidence=cost_confidence,
+        )
+
+    def test_filter_mixed_mode(self):
+        """Test filtering with mixed mode (default) returns all entries."""
+        entries = [
+            self.create_sample_entry(cost_estimated=False),
+            self.create_sample_entry(cost_estimated=True),
+        ]
+
+        result = filter_entries_by_cost_options(entries, cost_calculation_mode="mixed")
+        assert len(result) == 2
+        assert result == entries
+
+    def test_filter_exact_mode(self):
+        """Test filtering with exact mode only returns non-estimated entries."""
+        entries = [
+            self.create_sample_entry(cost_estimated=False),  # Should be included
+            self.create_sample_entry(cost_estimated=True),  # Should be excluded
+            self.create_sample_entry(cost_estimated=False),  # Should be included
+        ]
+
+        result = filter_entries_by_cost_options(entries, cost_calculation_mode="exact")
+        assert len(result) == 2
+        assert all(not entry.cost_estimated for entry in result)
+
+    def test_filter_estimated_mode(self):
+        """Test filtering with estimated mode only returns estimated entries."""
+        entries = [
+            self.create_sample_entry(cost_estimated=False),  # Should be excluded
+            self.create_sample_entry(cost_estimated=True),  # Should be included
+            self.create_sample_entry(cost_estimated=True),  # Should be included
+        ]
+
+        result = filter_entries_by_cost_options(entries, cost_calculation_mode="estimated")
+        assert len(result) == 2
+        assert all(entry.cost_estimated for entry in result)
+
+    def test_filter_empty_entries(self):
+        """Test filtering empty entries list."""
+        result = filter_entries_by_cost_options([], cost_calculation_mode="exact")
+        assert len(result) == 0
+
+    def test_filter_all_exact_entries(self):
+        """Test filtering when all entries are exact costs."""
+        entries = [
+            self.create_sample_entry(cost_estimated=False),
+            self.create_sample_entry(cost_estimated=False),
+        ]
+
+        result = filter_entries_by_cost_options(entries, cost_calculation_mode="estimated")
+        assert len(result) == 0
+
+    def test_filter_all_estimated_entries(self):
+        """Test filtering when all entries are estimated costs."""
+        entries = [
+            self.create_sample_entry(cost_estimated=True),
+            self.create_sample_entry(cost_estimated=True),
+        ]
+
+        result = filter_entries_by_cost_options(entries, cost_calculation_mode="exact")
+        assert len(result) == 0
+
+
 class TestMainFunction:
     """Test the main function."""
 
@@ -138,6 +220,8 @@ class TestMainFunction:
         args.end_date = None
         args.config = None
         args.exchange_rate_api_key = None
+        args.cost_calculation_mode = "mixed"
+        args.show_estimated_costs = False
         return args
 
     @pytest.fixture
@@ -416,6 +500,8 @@ class TestMainFunction:
         mock_args.exchange_rate_api_key = None
         mock_args.limit = None
         mock_args.debug = False
+        mock_args.cost_calculation_mode = "mixed"
+        mock_args.show_estimated_costs = False
 
         mock_parse_args.return_value = mock_args
         mock_load.return_value = {}

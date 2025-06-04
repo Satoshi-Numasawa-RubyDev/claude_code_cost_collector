@@ -430,6 +430,64 @@ class TestParseArguments:
         # Check that old option is not mentioned
         assert "--sort-desc" not in help_text
 
+    def test_show_estimated_costs_argument(self):
+        """Test that show-estimated-costs argument works."""
+        with patch("claude_code_cost_collector.cli.Path") as mock_path:
+            mock_path.return_value.expanduser.return_value.exists.return_value = True
+            mock_path.return_value.expanduser.return_value.is_dir.return_value = True
+            mock_path.return_value.expanduser.return_value.resolve.return_value = Path("/mocked/path")
+
+            # Test default (False)
+            args = parse_arguments([])
+            assert args.show_estimated_costs is False
+
+            # Test when flag is provided
+            args = parse_arguments(["--show-estimated-costs"])
+            assert args.show_estimated_costs is True
+
+    def test_cost_calculation_mode_argument(self):
+        """Test that cost-calculation-mode argument accepts valid choices."""
+        with patch("claude_code_cost_collector.cli.Path") as mock_path:
+            mock_path.return_value.expanduser.return_value.exists.return_value = True
+            mock_path.return_value.expanduser.return_value.is_dir.return_value = True
+            mock_path.return_value.expanduser.return_value.resolve.return_value = Path("/mocked/path")
+
+            # Test all valid modes
+            valid_modes = ["exact", "estimated", "mixed"]
+            for mode in valid_modes:
+                args = parse_arguments(["--cost-calculation-mode", mode])
+                assert args.cost_calculation_mode == mode
+
+            # Test default
+            args = parse_arguments([])
+            assert args.cost_calculation_mode == "mixed"
+
+    def test_cost_calculation_mode_invalid_choice(self):
+        """Test that cost-calculation-mode argument rejects invalid choices."""
+        with pytest.raises(SystemExit):
+            parse_arguments(["--cost-calculation-mode", "invalid"])
+
+    def test_cost_estimation_options_combination(self):
+        """Test combining cost estimation options."""
+        with patch("claude_code_cost_collector.cli.Path") as mock_path:
+            mock_path.return_value.expanduser.return_value.exists.return_value = True
+            mock_path.return_value.expanduser.return_value.is_dir.return_value = True
+            mock_path.return_value.expanduser.return_value.resolve.return_value = Path("/mocked/path")
+
+            args = parse_arguments(["--show-estimated-costs", "--cost-calculation-mode", "estimated"])
+            assert args.show_estimated_costs is True
+            assert args.cost_calculation_mode == "estimated"
+
+    def test_help_includes_cost_estimation_options(self):
+        """Test that help message includes cost estimation options."""
+        parser = create_parser()
+        help_text = parser.format_help()
+
+        # Check that cost estimation options are mentioned in help
+        assert "--show-estimated-costs" in help_text
+        assert "--cost-calculation-mode" in help_text
+        assert "exact" in help_text and "estimated" in help_text and "mixed" in help_text
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

@@ -374,5 +374,145 @@ class TestLimitFunctionality:
         assert "2025-05-09" not in result
 
 
+class TestEstimatedCostDisplay:
+    """Test estimated cost display functionality."""
+
+    def test_text_format_with_estimated_costs(self):
+        """Test that estimated costs are marked with asterisk in text format."""
+        # Create entries with estimated costs
+        sample_entry = create_sample_processed_log_entry()
+        sample_entry.cost_estimated = True
+        sample_entry.cost_confidence = "medium"
+
+        result = format_data([sample_entry], output_format="text", granularity="all")
+
+        # Check for asterisk in cost display
+        assert "*" in result
+        assert "Estimated cost based on token count" in result
+
+    def test_text_format_without_estimated_costs(self):
+        """Test that non-estimated costs don't have asterisk in text format."""
+        sample_entry = create_sample_processed_log_entry()
+        sample_entry.cost_estimated = False
+
+        result = format_data([sample_entry], output_format="text", granularity="all")
+
+        # Should not contain asterisk or estimation warning
+        assert "*" not in result
+        assert "Estimated cost based on token count" not in result
+
+    def test_json_format_with_estimated_costs(self):
+        """Test JSON format includes estimated cost flags and warnings."""
+        sample_entry = create_sample_processed_log_entry()
+        sample_entry.cost_estimated = True
+        sample_entry.cost_confidence = "low"
+
+        result = format_data([sample_entry], output_format="json", granularity="all")
+        parsed = json.loads(result)
+
+        # Check summary has estimated cost information
+        assert parsed["summary"]["has_estimated_costs"] is True
+        assert "cost_estimation_warning" in parsed["summary"]
+        assert "estimated based on token count" in parsed["summary"]["cost_estimation_warning"]
+
+        # Check individual entry has estimated cost fields
+        entry_data = parsed["data"][0]
+        assert entry_data["cost_estimated"] is True
+        assert entry_data["cost_confidence"] == "low"
+
+    def test_json_format_without_estimated_costs(self):
+        """Test JSON format without estimated costs."""
+        sample_entry = create_sample_processed_log_entry()
+        sample_entry.cost_estimated = False
+
+        result = format_data([sample_entry], output_format="json", granularity="all")
+        parsed = json.loads(result)
+
+        # Check summary shows no estimated costs
+        assert parsed["summary"]["has_estimated_costs"] is False
+        assert "cost_estimation_warning" not in parsed["summary"]
+
+        # Check individual entry
+        entry_data = parsed["data"][0]
+        assert entry_data["cost_estimated"] is False
+        assert entry_data["cost_confidence"] == "high"  # default
+
+    def test_csv_format_with_estimated_costs(self):
+        """Test CSV format includes estimated cost columns."""
+        sample_entry = create_sample_processed_log_entry()
+        sample_entry.cost_estimated = True
+        sample_entry.cost_confidence = "medium"
+
+        result = format_data([sample_entry], output_format="csv", granularity="all")
+        lines = result.strip().split("\n")
+
+        # Check headers include new columns
+        header = lines[0]
+        assert "cost_estimated" in header
+        assert "cost_confidence" in header
+
+        # Check data row has estimated cost values
+        data_row = lines[1]
+        assert "True" in data_row
+        assert "medium" in data_row
+
+    def test_aggregated_data_with_estimated_costs(self):
+        """Test aggregated data shows estimated cost indicators."""
+        aggregated_data = {
+            "2025-05-09": {
+                "total_input_tokens": 100,
+                "total_output_tokens": 50,
+                "total_tokens": 150,
+                "total_cost_usd": 0.075,
+                "has_estimated_costs": True,
+            }
+        }
+
+        # Test text format
+        text_result = format_data(aggregated_data, output_format="text", granularity="daily")
+        assert "*" in text_result
+        assert "Estimated cost based on token count" in text_result
+
+        # Test JSON format
+        json_result = format_data(aggregated_data, output_format="json", granularity="daily")
+        parsed = json.loads(json_result)
+        assert parsed["summary"]["has_estimated_costs"] is True
+        assert "cost_estimation_warning" in parsed["summary"]
+
+        # Test CSV format
+        csv_result = format_data(aggregated_data, output_format="csv", granularity="daily")
+        lines = csv_result.strip().split("\n")
+        header = lines[0]
+        assert "has_estimated_costs" in header
+        data_row = lines[1]
+        assert "True" in data_row
+
+    def test_mixed_estimated_and_actual_costs(self):
+        """Test handling of mixed estimated and actual costs."""
+        entries = []
+
+        # Add actual cost entry
+        actual_entry = create_sample_processed_log_entry()
+        actual_entry.cost_estimated = False
+        entries.append(actual_entry)
+
+        # Add estimated cost entry
+        estimated_entry = create_sample_processed_log_entry()
+        estimated_entry.cost_estimated = True
+        estimated_entry.cost_confidence = "high"
+        entries.append(estimated_entry)
+
+        result = format_data(entries, output_format="text", granularity="all")
+
+        # Should show estimation warning since at least one cost is estimated
+        assert "*" in result
+        assert "Estimated cost based on token count" in result
+
+        # JSON should also indicate estimated costs present
+        json_result = format_data(entries, output_format="json", granularity="all")
+        parsed = json.loads(json_result)
+        assert parsed["summary"]["has_estimated_costs"] is True
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

@@ -34,6 +34,11 @@ class ProcessedLogEntry:
         cache_creation_tokens: Optional cache creation tokens (included in cost)
         cache_read_tokens: Optional cache read tokens (typically not charged)
         raw_data: Optional dictionary containing additional raw log data
+        cost_estimated: Whether the cost was estimated from tokens rather than recorded
+        cost_confidence: Confidence level of cost estimation (high/medium/low)
+        ttft_ms: Time to First Token in milliseconds
+        entry_uuid: Unique identifier for this log entry
+        parent_uuid: UUID of parent entry for related requests
     """
 
     timestamp: datetime
@@ -51,6 +56,11 @@ class ProcessedLogEntry:
     cache_creation_tokens: Optional[int] = None
     cache_read_tokens: Optional[int] = None
     raw_data: Optional[Dict[str, Any]] = None
+    cost_estimated: bool = False
+    cost_confidence: str = "high"
+    ttft_ms: Optional[int] = None
+    entry_uuid: Optional[str] = None
+    parent_uuid: Optional[str] = None
 
     def __post_init__(self) -> None:
         """Validate and normalize data after initialization."""
@@ -91,6 +101,15 @@ class ProcessedLogEntry:
             result["cache_read_tokens"] = self.cache_read_tokens
         if self.raw_data is not None:
             result["raw_data"] = self.raw_data
+        # Always include cost estimation fields for consistency
+        result["cost_estimated"] = self.cost_estimated
+        result["cost_confidence"] = self.cost_confidence
+        if self.ttft_ms is not None:
+            result["ttft_ms"] = self.ttft_ms
+        if self.entry_uuid is not None:
+            result["entry_uuid"] = self.entry_uuid
+        if self.parent_uuid is not None:
+            result["parent_uuid"] = self.parent_uuid
 
         return result
 
@@ -126,6 +145,11 @@ class ProcessedLogEntry:
             cache_creation_tokens=data.get("cache_creation_tokens"),
             cache_read_tokens=data.get("cache_read_tokens"),
             raw_data=data.get("raw_data"),
+            cost_estimated=data.get("cost_estimated", False),
+            cost_confidence=data.get("cost_confidence", "high"),
+            ttft_ms=data.get("ttft_ms"),
+            entry_uuid=data.get("entry_uuid"),
+            parent_uuid=data.get("parent_uuid"),
         )
 
 

@@ -1,0 +1,16 @@
+cost_calculation:
+  cache_read_cost_factor: 0.0
+  confidence_threshold: medium
+  enable_estimated_costs: true
+  fallback_pricing_enabled: true
+  show_confidence_level: false
+default_date_range_days: 30
+default_granularity: daily
+default_log_directory: /Users/satoshi_numasawa/.claude/projects
+default_output_format: text
+exchange_rate_api_key: your_api_key_here
+model_pricing:
+  custom_models: {}
+  pricing_update_check: false
+  unknown_model_fallback: claude-3-sonnet
+timezone: auto

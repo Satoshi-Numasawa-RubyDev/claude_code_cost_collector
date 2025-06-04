@@ -10,15 +10,10 @@ import logging
 from collections import defaultdict
 from typing import Any, Dict, List
 
+from .exceptions import AggregationError
 from .models import AggregatedData, ProcessedLogEntries, ProcessedLogEntry
 
 logger = logging.getLogger(__name__)
-
-
-class AggregationError(Exception):
-    """Exception raised when aggregation fails."""
-
-    pass
 
 
 def aggregate_data(entries: ProcessedLogEntries, granularity: str, **kwargs: Any) -> AggregatedData:
@@ -277,6 +272,7 @@ def _create_aggregate_entry(key: str, entries: List[ProcessedLogEntry]) -> Dict[
     sessions = set()
     earliest_timestamp = None
     latest_timestamp = None
+    has_estimated_costs = False
 
     # Aggregate all entries
     for entry in entries:
@@ -292,6 +288,10 @@ def _create_aggregate_entry(key: str, entries: List[ProcessedLogEntry]) -> Dict[
             has_converted_data = True
             if converted_currency is None:
                 converted_currency = entry.target_currency
+
+        # Check for estimated costs
+        if hasattr(entry, "cost_estimated") and entry.cost_estimated:
+            has_estimated_costs = True
 
         models.add(entry.model)
         projects.add(entry.project_name)
@@ -317,6 +317,7 @@ def _create_aggregate_entry(key: str, entries: List[ProcessedLogEntry]) -> Dict[
         "sessions": sorted(list(sessions)),
         "earliest_timestamp": (earliest_timestamp.isoformat() if earliest_timestamp else None),
         "latest_timestamp": (latest_timestamp.isoformat() if latest_timestamp else None),
+        "has_estimated_costs": has_estimated_costs,
     }
 
     # Add converted currency data if available
