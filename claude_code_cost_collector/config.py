@@ -10,6 +10,8 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import yaml
+
 
 class ConfigError(Exception):
     """Exception raised for configuration-related errors."""
@@ -30,11 +32,25 @@ def get_default_config() -> Dict[str, Any]:
         "default_output_format": "text",
         "timezone": "auto",  # "auto", "UTC", or timezone name like "Asia/Tokyo"
         "default_date_range_days": 30,  # Default number of days to analyze (0 = all data)
+        # Cost calculation settings
+        "cost_calculation": {
+            "enable_estimated_costs": True,  # Enable cost estimation for new format entries
+            "confidence_threshold": "medium",  # Minimum confidence level: "high", "medium", "low"
+            "show_confidence_level": False,  # Show confidence level in output
+            "fallback_pricing_enabled": True,  # Use fallback pricing for unknown models
+            "cache_read_cost_factor": 0.0,  # Multiplier for cache read costs (0.0 = free)
+        },
+        # Model pricing settings
+        "model_pricing": {
+            "custom_models": {},  # Custom model pricing overrides
+            "pricing_update_check": False,  # Check for pricing updates (future feature)
+            "unknown_model_fallback": "claude-3-sonnet",  # Fallback model for pricing
+        },
     }
 
 
 def load_config_file(config_path: Path) -> Dict[str, Any]:
-    """Load configuration from a JSON file.
+    """Load configuration from a JSON or YAML file.
 
     Args:
         config_path: Path to the configuration file.
@@ -50,11 +66,25 @@ def load_config_file(config_path: Path) -> Dict[str, Any]:
             raise ConfigError(f"Configuration file not found: {config_path}")
 
         with open(config_path, "r", encoding="utf-8") as f:
-            config_data = json.load(f)
+            file_content = f.read()
+
+        # Determine file format by extension
+        if config_path.suffix.lower() in [".yaml", ".yml"]:
+            try:
+                config_data = yaml.safe_load(file_content)
+            except yaml.YAMLError as e:
+                raise ConfigError(f"Invalid YAML in configuration file {config_path}: {e}")
+        else:
+            # Default to JSON
+            try:
+                config_data = json.loads(file_content)
+            except json.JSONDecodeError as e:
+                raise ConfigError(f"Invalid JSON in configuration file {config_path}: {e}")
+
+        if config_data is None:
+            config_data = {}
 
         return config_data  # type: ignore[no-any-return]
-    except json.JSONDecodeError as e:
-        raise ConfigError(f"Invalid JSON in configuration file {config_path}: {e}")
     except (OSError, IOError) as e:
         raise ConfigError(f"Cannot read configuration file {config_path}: {e}")
 
@@ -122,9 +152,13 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
         file_config = load_config_file(Path(config_path))
         config = merge_config(config, file_config)
     else:
-        # Check default configuration file locations
+        # Check default configuration file locations (prefer YAML, fallback to JSON)
         default_config_paths = [
+            Path.home() / ".claude_code_cost_collector.yaml",
+            Path.home() / ".claude_code_cost_collector.yml",
             Path.home() / ".claude_code_cost_collector.json",
+            Path.cwd() / "claude_code_cost_collector.yaml",
+            Path.cwd() / "claude_code_cost_collector.yml",
             Path.cwd() / "claude_code_cost_collector.json",
         ]
 
@@ -186,12 +220,84 @@ def validate_config(config: Dict[str, Any]) -> None:
         except (OSError, IOError) as e:
             raise ConfigError(f"Cannot access or create log directory {log_dir}: {e}")
 
+    # Validate cost_calculation section
+    if "cost_calculation" in config:
+        cost_calc_config = config["cost_calculation"]
+        if not isinstance(cost_calc_config, dict):
+            raise ConfigError("cost_calculation must be a dictionary")
 
-def create_sample_config_file(output_path: Path) -> None:
+        # Validate confidence_threshold
+        if "confidence_threshold" in cost_calc_config:
+            valid_confidence_levels = ["high", "medium", "low"]
+            confidence = cost_calc_config["confidence_threshold"]
+            if confidence not in valid_confidence_levels:
+                raise ConfigError(
+                    f"Invalid confidence_threshold '{confidence}'. Must be one of: {', '.join(valid_confidence_levels)}"
+                )
+
+        # Validate boolean fields
+        boolean_fields = ["enable_estimated_costs", "show_confidence_level", "fallback_pricing_enabled"]
+        for field in boolean_fields:
+            if field in cost_calc_config and not isinstance(cost_calc_config[field], bool):
+                raise ConfigError(f"cost_calculation.{field} must be a boolean value")
+
+        # Validate cache_read_cost_factor
+        if "cache_read_cost_factor" in cost_calc_config:
+            factor = cost_calc_config["cache_read_cost_factor"]
+            if not isinstance(factor, (int, float)) or factor < 0.0:
+                raise ConfigError("cost_calculation.cache_read_cost_factor must be a non-negative number")
+
+    # Validate model_pricing section
+    if "model_pricing" in config:
+        model_pricing_config = config["model_pricing"]
+        if not isinstance(model_pricing_config, dict):
+            raise ConfigError("model_pricing must be a dictionary")
+
+        # Validate custom_models
+        if "custom_models" in model_pricing_config:
+            custom_models = model_pricing_config["custom_models"]
+            if not isinstance(custom_models, dict):
+                raise ConfigError("model_pricing.custom_models must be a dictionary")
+
+            # Validate each custom model pricing structure
+            for model_name, pricing in custom_models.items():
+                if not isinstance(pricing, dict):
+                    raise ConfigError(f"Custom model pricing for '{model_name}' must be a dictionary")
+
+                required_pricing_fields = ["input_cost", "output_cost"]
+                for field in required_pricing_fields:
+                    if field not in pricing:
+                        raise ConfigError(f"Missing required pricing field '{field}' for model '{model_name}'")
+
+                    cost_value = pricing[field]
+                    if not isinstance(cost_value, (int, float)) or cost_value < 0.0:
+                        raise ConfigError(f"Invalid {field} for model '{model_name}': must be a non-negative number")
+
+                # Validate optional cache_creation_cost
+                if "cache_creation_cost" in pricing:
+                    cache_cost = pricing["cache_creation_cost"]
+                    if not isinstance(cache_cost, (int, float)) or cache_cost < 0.0:
+                        raise ConfigError(f"Invalid cache_creation_cost for model '{model_name}': must be a non-negative number")
+
+        # Validate boolean fields
+        boolean_fields = ["pricing_update_check"]
+        for field in boolean_fields:
+            if field in model_pricing_config and not isinstance(model_pricing_config[field], bool):
+                raise ConfigError(f"model_pricing.{field} must be a boolean value")
+
+        # Validate unknown_model_fallback
+        if "unknown_model_fallback" in model_pricing_config:
+            fallback = model_pricing_config["unknown_model_fallback"]
+            if not isinstance(fallback, str) or not fallback.strip():
+                raise ConfigError("model_pricing.unknown_model_fallback must be a non-empty string")
+
+
+def create_sample_config_file(output_path: Path, format_type: str = "yaml") -> None:
     """Create a sample configuration file.
 
     Args:
         output_path: Path where to create the sample config file.
+        format_type: Format of the config file ('yaml' or 'json').
 
     Raises:
         ConfigError: If the sample config file cannot be created.
@@ -201,12 +307,36 @@ def create_sample_config_file(output_path: Path) -> None:
         "default_log_directory": str(Path.home() / ".claude" / "projects"),
         "default_granularity": "daily",
         "default_output_format": "text",
-        "timezone": "auto",
-        "default_date_range_days": 30,
+        "timezone": "auto",  # "auto", "UTC", or timezone name like "Asia/Tokyo"
+        "default_date_range_days": 30,  # Default number of days to analyze (0 = all data)
+        # Cost calculation settings for new format support
+        "cost_calculation": {
+            "enable_estimated_costs": True,  # Enable cost estimation for new format entries
+            "confidence_threshold": "medium",  # Minimum confidence level: "high", "medium", "low"
+            "show_confidence_level": False,  # Show confidence level in output
+            "fallback_pricing_enabled": True,  # Use fallback pricing for unknown models
+            "cache_read_cost_factor": 0.0,  # Multiplier for cache read costs (0.0 = free)
+        },
+        # Model pricing settings for custom pricing overrides
+        "model_pricing": {
+            "custom_models": {
+                # Example custom model pricing (remove if not needed)
+                # "custom-model-name": {
+                #     "input_cost": 0.003,          # USD per 1K input tokens
+                #     "output_cost": 0.015,         # USD per 1K output tokens
+                #     "cache_creation_cost": 0.0075  # USD per 1K cache creation tokens (optional)
+                # }
+            },
+            "pricing_update_check": False,  # Check for pricing updates (future feature)
+            "unknown_model_fallback": "claude-3-sonnet",  # Fallback model for pricing
+        },
     }
 
     try:
         with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(sample_config, f, indent=2)
+            if format_type.lower() == "yaml":
+                yaml.dump(sample_config, f, default_flow_style=False, allow_unicode=True, indent=2)
+            else:
+                json.dump(sample_config, f, indent=2)
     except (OSError, IOError) as e:
         raise ConfigError(f"Cannot create sample config file {output_path}: {e}")

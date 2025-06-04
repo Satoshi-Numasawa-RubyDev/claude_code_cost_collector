@@ -214,7 +214,8 @@ class TestConfig(unittest.TestCase):
             output_path = Path(f.name)
 
         try:
-            create_sample_config_file(output_path)
+            # Test JSON format
+            create_sample_config_file(output_path, "json")
 
             # Verify file was created and contains valid JSON
             self.assertTrue(output_path.exists())
@@ -226,9 +227,121 @@ class TestConfig(unittest.TestCase):
             self.assertIn("default_log_directory", sample_config)
             self.assertIn("default_granularity", sample_config)
             self.assertIn("default_output_format", sample_config)
+            self.assertIn("cost_calculation", sample_config)
+            self.assertIn("model_pricing", sample_config)
         finally:
             if output_path.exists():
                 output_path.unlink()
+
+    def test_create_sample_config_file_yaml(self):
+        """Test creating sample YAML configuration file."""
+        with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as f:
+            output_path = Path(f.name)
+
+        try:
+            # Test YAML format (default)
+            create_sample_config_file(output_path, "yaml")
+
+            # Verify file was created and contains valid YAML
+            self.assertTrue(output_path.exists())
+
+            with open(output_path, "r") as f:
+                import yaml
+
+                sample_config = yaml.safe_load(f)
+
+            self.assertIn("exchange_rate_api_key", sample_config)
+            self.assertIn("default_log_directory", sample_config)
+            self.assertIn("default_granularity", sample_config)
+            self.assertIn("default_output_format", sample_config)
+            self.assertIn("cost_calculation", sample_config)
+            self.assertIn("model_pricing", sample_config)
+        finally:
+            if output_path.exists():
+                output_path.unlink()
+
+    def test_validate_config_cost_calculation_invalid_confidence(self):
+        """Test validating configuration with invalid confidence threshold."""
+        config = get_default_config()
+        config["cost_calculation"]["confidence_threshold"] = "invalid"
+
+        with self.assertRaises(ConfigError) as cm:
+            validate_config(config)
+
+        self.assertIn("Invalid confidence_threshold", str(cm.exception))
+
+    def test_validate_config_cost_calculation_invalid_boolean(self):
+        """Test validating configuration with invalid boolean value."""
+        config = get_default_config()
+        config["cost_calculation"]["enable_estimated_costs"] = "not_a_boolean"
+
+        with self.assertRaises(ConfigError) as cm:
+            validate_config(config)
+
+        self.assertIn("must be a boolean value", str(cm.exception))
+
+    def test_validate_config_cost_calculation_invalid_factor(self):
+        """Test validating configuration with invalid cache read cost factor."""
+        config = get_default_config()
+        config["cost_calculation"]["cache_read_cost_factor"] = -1.0
+
+        with self.assertRaises(ConfigError) as cm:
+            validate_config(config)
+
+        self.assertIn("must be a non-negative number", str(cm.exception))
+
+    def test_validate_config_model_pricing_invalid_custom_model(self):
+        """Test validating configuration with invalid custom model pricing."""
+        config = get_default_config()
+        config["model_pricing"]["custom_models"] = {
+            "test-model": {
+                "input_cost": -0.001,  # Invalid negative cost
+                "output_cost": 0.015,
+            }
+        }
+
+        with self.assertRaises(ConfigError) as cm:
+            validate_config(config)
+
+        self.assertIn("must be a non-negative number", str(cm.exception))
+
+    def test_validate_config_model_pricing_missing_field(self):
+        """Test validating configuration with missing required pricing field."""
+        config = get_default_config()
+        config["model_pricing"]["custom_models"] = {
+            "test-model": {
+                "input_cost": 0.003,
+                # Missing output_cost
+            }
+        }
+
+        with self.assertRaises(ConfigError) as cm:
+            validate_config(config)
+
+        self.assertIn("Missing required pricing field", str(cm.exception))
+
+    def test_load_yaml_config_file(self):
+        """Test loading YAML configuration file."""
+        config_data = {
+            "exchange_rate_api_key": "test_yaml_key",
+            "default_granularity": "monthly",
+            "cost_calculation": {"enable_estimated_costs": False, "confidence_threshold": "high"},
+        }
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            import yaml
+
+            yaml.dump(config_data, f)
+            config_path = Path(f.name)
+
+        try:
+            loaded_config = load_config_file(config_path)
+            self.assertEqual(loaded_config["exchange_rate_api_key"], "test_yaml_key")
+            self.assertEqual(loaded_config["default_granularity"], "monthly")
+            self.assertEqual(loaded_config["cost_calculation"]["enable_estimated_costs"], False)
+            self.assertEqual(loaded_config["cost_calculation"]["confidence_threshold"], "high")
+        finally:
+            config_path.unlink()
 
 
 if __name__ == "__main__":
