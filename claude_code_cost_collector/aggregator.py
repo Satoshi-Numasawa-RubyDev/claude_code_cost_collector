@@ -359,9 +359,7 @@ def validate_aggregation_input(entries: ProcessedLogEntries, granularity: str) -
         raise ValueError(f"Invalid granularity '{granularity}'. Must be one of: {get_supported_granularities()}")
 
 
-def _add_converted_costs_to_entries(
-    entries: ProcessedLogEntries, exchange_rate: float, target_currency: str
-) -> ProcessedLogEntries:
+def _add_converted_costs_to_entries(entries: ProcessedLogEntries, exchange_rate: float, target_currency: str) -> ProcessedLogEntries:
     """
     Add converted currency costs to entries using the provided exchange rate.
 
@@ -384,9 +382,7 @@ def _add_converted_costs_to_entries(
 
         if needs_conversion:
             # Calculate converted cost using the exchange rate
-            converted_cost = convert_currency(
-                amount=entry.cost_usd, from_currency="USD", to_currency=target_currency, exchange_rate=exchange_rate
-            )
+            converted_cost = convert_currency(amount=entry.cost_usd, from_currency="USD", to_currency=target_currency, exchange_rate=exchange_rate)
 
             # Create a new ProcessedLogEntry with the converted cost
             entry_dict = entry.to_dict()

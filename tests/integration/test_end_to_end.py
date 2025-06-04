@@ -174,9 +174,7 @@ class TestEndToEndIntegration:
 
     def test_date_filtering_range(self, test_data_dir):
         """Test filtering with date range."""
-        result = self.run_command(
-            ["--directory", str(test_data_dir), "--start-date", "2025-05-10", "--end-date", "2025-05-20", "--output", "json"]
-        )
+        result = self.run_command(["--directory", str(test_data_dir), "--start-date", "2025-05-10", "--end-date", "2025-05-20", "--output", "json"])
 
         assert result.returncode == 0
 
@@ -278,9 +276,7 @@ class TestEndToEndIntegration:
 
         # Test with limit smaller than total
         if total_entries > 2:
-            result_limited = self.run_command(
-                ["--directory", str(test_data_dir), "--all-data", "--limit", "2", "--output", "text"]
-            )
+            result_limited = self.run_command(["--directory", str(test_data_dir), "--all-data", "--limit", "2", "--output", "text"])
             assert result_limited.returncode == 0
 
             # Count limited output rows
@@ -383,9 +379,7 @@ class TestEndToEndIntegration:
         total_count = all_data["metadata"]["total_entries"]
 
         # Test with limit much larger than total
-        result_limited = self.run_command(
-            ["--directory", str(test_data_dir), "--all-data", "--limit", str(total_count + 10), "--output", "json"]
-        )
+        result_limited = self.run_command(["--directory", str(test_data_dir), "--all-data", "--limit", str(total_count + 10), "--output", "json"])
 
         assert result_limited.returncode == 0
 
@@ -396,9 +390,7 @@ class TestEndToEndIntegration:
 
     def test_limit_date_ordering(self, test_data_dir):
         """Test that limit respects date ordering for daily granularity."""
-        result = self.run_command(
-            ["--directory", str(test_data_dir), "--all-data", "--granularity", "daily", "--limit", "2", "--output", "json"]
-        )
+        result = self.run_command(["--directory", str(test_data_dir), "--all-data", "--granularity", "daily", "--limit", "2", "--output", "json"])
 
         assert result.returncode == 0
 
@@ -423,13 +415,11 @@ class TestEndToEndIntegration:
 
         assert result.returncode == 0
         assert "claude-code-cost-collector" in result.stdout
-        assert "1.1.1" in result.stdout
+        assert "1.1.2" in result.stdout
 
     def test_new_sort_interface_date_descending(self):
         """Test new sort interface with date field descending order."""
-        result = self.run_command(
-            ["--granularity", "daily", "--output", "json", "--all-data", "--sort", "desc", "--sort-field", "date"]
-        )
+        result = self.run_command(["--granularity", "daily", "--output", "json", "--all-data", "--sort", "desc", "--sort-field", "date"])
 
         assert result.returncode == 0
 
@@ -447,9 +437,7 @@ class TestEndToEndIntegration:
 
     def test_new_sort_interface_date_ascending(self):
         """Test new sort interface with date field ascending order."""
-        result = self.run_command(
-            ["--granularity", "daily", "--output", "json", "--all-data", "--sort", "asc", "--sort-field", "date"]
-        )
+        result = self.run_command(["--granularity", "daily", "--output", "json", "--all-data", "--sort", "asc", "--sort-field", "date"])
 
         assert result.returncode == 0
 
@@ -466,9 +454,7 @@ class TestEndToEndIntegration:
 
     def test_new_sort_interface_cost_descending(self):
         """Test new sort interface with cost field descending order."""
-        result = self.run_command(
-            ["--granularity", "daily", "--output", "json", "--all-data", "--sort", "desc", "--sort-field", "cost"]
-        )
+        result = self.run_command(["--granularity", "daily", "--output", "json", "--all-data", "--sort", "desc", "--sort-field", "cost"])
 
         assert result.returncode == 0
 

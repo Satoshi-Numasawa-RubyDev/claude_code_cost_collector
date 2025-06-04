@@ -201,9 +201,7 @@ def validate_config(config: Dict[str, Any]) -> None:
 
     # Validate output format values
     if config["default_output_format"] not in OUTPUT_FORMATS:
-        raise ConfigError(
-            f"Invalid output format '{config['default_output_format']}'. Must be one of: {', '.join(OUTPUT_FORMATS)}"
-        )
+        raise ConfigError(f"Invalid output format '{config['default_output_format']}'. Must be one of: {', '.join(OUTPUT_FORMATS)}")
 
     # Validate log directory exists or can be created
     log_dir = Path(config["default_log_directory"])

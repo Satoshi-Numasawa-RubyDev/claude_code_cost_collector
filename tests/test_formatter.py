@@ -71,9 +71,7 @@ class TestJSONFormatter:
 
     def test_json_format_aggregated_data(self):
         """Test JSON formatting of aggregated data."""
-        aggregated_data = {
-            "2025-05-09": {"total_input_tokens": 100, "total_output_tokens": 50, "total_tokens": 150, "total_cost_usd": 0.075}
-        }
+        aggregated_data = {"2025-05-09": {"total_input_tokens": 100, "total_output_tokens": 50, "total_tokens": 150, "total_cost_usd": 0.075}}
 
         result = format_data(aggregated_data, output_format="json", granularity="daily")
         parsed = json.loads(result)
@@ -159,9 +157,7 @@ class TestTextFormatter:
 
     def test_text_format_aggregated_data(self):
         """Test text formatting of aggregated data."""
-        aggregated_data = {
-            "2025-05-09": {"total_input_tokens": 100, "total_output_tokens": 50, "total_tokens": 150, "total_cost_usd": 0.075}
-        }
+        aggregated_data = {"2025-05-09": {"total_input_tokens": 100, "total_output_tokens": 50, "total_tokens": 150, "total_cost_usd": 0.075}}
 
         result = format_data(aggregated_data, output_format="text", granularity="daily")
 

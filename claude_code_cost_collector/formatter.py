@@ -148,9 +148,7 @@ def _format_json(
                 summary[f"total_cost_{target_currency.lower()}"] = total_converted_cost
 
             if has_estimated_costs:
-                summary["cost_estimation_warning"] = (
-                    "Some cost values are estimated based on token count and may not reflect actual charges"
-                )
+                summary["cost_estimation_warning"] = "Some cost values are estimated based on token count and may not reflect actual charges"
 
         else:
             # Aggregated data
@@ -174,9 +172,7 @@ def _format_json(
                 summary[f"total_cost_{target_currency.lower()}"] = total_converted_cost
 
             if has_estimated_costs:
-                summary["cost_estimation_warning"] = (
-                    "Some cost values are estimated based on token count and may not reflect actual charges"
-                )
+                summary["cost_estimation_warning"] = "Some cost values are estimated based on token count and may not reflect actual charges"
 
         output = {
             "metadata": {
@@ -332,9 +328,7 @@ def _format_csv(
     return output.getvalue()
 
 
-def _format_individual_entries_as_text(
-    entries: ProcessedLogEntries, target_currency: Optional[str] = None, show_estimated_costs: bool = True
-) -> str:
+def _format_individual_entries_as_text(entries: ProcessedLogEntries, target_currency: Optional[str] = None, show_estimated_costs: bool = True) -> str:
     """Helper function to format individual log entries as text table.
 
     Args:
@@ -653,9 +647,7 @@ def get_supported_formats() -> List[str]:
     return ["text", "json", "yaml", "csv"]
 
 
-def format_summary_statistics(
-    data: Union[ProcessedLogEntries, AggregatedData], target_currency: Optional[str] = None
-) -> Dict[str, Any]:
+def format_summary_statistics(data: Union[ProcessedLogEntries, AggregatedData], target_currency: Optional[str] = None) -> Dict[str, Any]:
     """Generate summary statistics for the data.
 
     Args:
@@ -681,9 +673,7 @@ def format_summary_statistics(
         if target_currency:
             total_converted_cost = sum(entry.converted_cost or 0.0 for entry in data if hasattr(entry, "converted_cost"))
             stats[f"total_cost_{target_currency.lower()}"] = total_converted_cost
-            stats[f"average_cost_per_entry_{target_currency.lower()}"] = (
-                total_converted_cost / total_entries if total_entries > 0 else 0
-            )
+            stats[f"average_cost_per_entry_{target_currency.lower()}"] = total_converted_cost / total_entries if total_entries > 0 else 0
 
     else:
         total_entries = len(data)

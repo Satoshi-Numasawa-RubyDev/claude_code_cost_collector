@@ -39,6 +39,7 @@ The tool analyzes Claude CLI usage log files and aggregates costs across various
 
 ### Currency Display
 - **US Dollar (USD)**: Default display currency
+- **Currency Conversion**: Convert costs to other currencies (EUR, GBP, CAD, etc.) with `--currency` option
 
 ### Filtering & Sorting Features
 - **Date Range Filtering**: Filter data by specifying start and end dates
@@ -107,6 +108,21 @@ cccc --sort desc --sort-field cost    # Sort by cost (descending)
 cccc --sort asc --sort-field total    # Sort by total tokens (ascending)
 cccc --sort desc --sort-field output  # Sort by output tokens (descending)
 cccc --sort asc --sort-field date     # Sort by date (ascending) - explicit
+
+# Cost calculation options
+cccc --show-estimated-costs           # Show estimates (marked with *) when exact costs unavailable
+cccc --cost-calculation-mode exact    # Show only exact costs from logs
+cccc --cost-calculation-mode estimated # Show only calculated estimates from tokens
+cccc --cost-calculation-mode mixed    # Show both exact and estimated costs (default)
+
+# Currency conversion
+cccc --currency EUR                   # Convert costs to Euros
+cccc --currency GBP                   # Convert costs to British Pounds
+cccc --currency CAD                   # Convert costs to Canadian Dollars
+cccc --exchange-rate-api-key YOUR_KEY # Use custom exchange rate API key
+
+# Debug and troubleshooting
+cccc --debug                          # Enable detailed debug output for troubleshooting
 ```
 
 #### Date Range and Data Control
@@ -305,6 +321,10 @@ cccc --granularity project --output csv --sort desc --sort-field cost > project_
 
 # Individual display of all logs in specific directory
 cccc --directory /custom/logs --granularity all --all-data
+
+# Currency conversion examples
+cccc --currency EUR --granularity monthly    # Monthly costs in Euros
+cccc --currency JPY --sort desc --sort-field cost --limit 10  # Top 10 costs in Japanese Yen
 
 # Last 7 days data in Japan time (chronological order, newest first)
 cccc --timezone Asia/Tokyo --start-date $(date -v-7d '+%Y-%m-%d') --sort desc

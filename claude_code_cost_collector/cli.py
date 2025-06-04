@@ -190,14 +190,14 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--show-estimated-costs",
         action="store_true",
-        help="Show estimated costs when exact costs are unavailable (marked with asterisk)",
+        help="Show cost estimates calculated from tokens (marked with *) when log lacks exact costs",
     )
 
     parser.add_argument(
         "--cost-calculation-mode",
         choices=["exact", "estimated", "mixed"],
         default="mixed",
-        help="Cost calculation mode: exact (only exact costs), estimated (only estimates), mixed (both) (default: %(default)s)",
+        help="Choose cost data: 'exact' uses only logged costs, 'estimated' calculates from tokens, 'mixed' shows both (default: %(default)s)",
         metavar="MODE",
     )
 

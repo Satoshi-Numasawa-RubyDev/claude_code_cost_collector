@@ -1,6 +1,6 @@
 [project]
 name = "claude-code-cost-collector"
-version = "1.1.1"
+version = "1.1.2"
 description = "A command-line tool for aggregating and displaying costs associated with Claude API usage"
 readme = "README.md"
 license = "Apache-2.0"
@@ -31,7 +31,7 @@ packages = ["claude_code_cost_collector"]
 
 
 [tool.ruff]
-line-length = 130
+line-length = 150
 target-version = "py313"
 
 [tool.ruff.lint]
