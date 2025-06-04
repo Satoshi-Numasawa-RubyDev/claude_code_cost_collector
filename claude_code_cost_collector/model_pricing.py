@@ -130,16 +130,16 @@ class ModelPricingManager:
         # These are approximate values and should be updated with current pricing
         default_models = {
             "claude-sonnet-4": ModelPricing(
-                input_price_per_million=15.0,
-                output_price_per_million=75.0,
-                cache_creation_price_per_million=18.75,  # 1.25x input price
-                cache_read_price_per_million=1.5,  # 0.1x input price
+                input_price_per_million=3.0,
+                output_price_per_million=15.0,
+                cache_creation_price_per_million=3.75,  # 1.25x input price
+                cache_read_price_per_million=0.3,  # 0.1x input price
             ),
             "claude-sonnet-4-20250514": ModelPricing(
-                input_price_per_million=15.0,
-                output_price_per_million=75.0,
-                cache_creation_price_per_million=18.75,
-                cache_read_price_per_million=1.5,
+                input_price_per_million=3.0,
+                output_price_per_million=15.0,
+                cache_creation_price_per_million=3.75,
+                cache_read_price_per_million=0.3,
             ),
             "claude-opus-4": ModelPricing(
                 input_price_per_million=15.0,
