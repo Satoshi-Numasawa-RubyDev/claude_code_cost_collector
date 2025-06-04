@@ -173,7 +173,7 @@ class TestFormatDetector:
                     "type": "assistant",
                     "timestamp": "2025-06-03T12:35:51.791Z",
                     "sessionId": "test",
-                    "version": "1.1.0",
+                    "version": "1.1.1",
                     "uuid": "test-uuid",
                     "message": {"model": "test", "ttftMs": 1000},
                 },
