@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-06-04
+
+### Documentation
+- **README Update**: Improved Claude Code v1.0.9 compatibility documentation
+  - Enhanced clarity on cost calculation differences between legacy and new formats
+  - Better explanation of tool functionality with different Claude Code versions
+
 ## [1.1.0] - 2025-06-04
 
 ### Added
