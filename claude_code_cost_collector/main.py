@@ -55,9 +55,7 @@ def filter_entries_by_date_range(
     return filtered_entries
 
 
-def filter_entries_by_cost_options(
-    entries: List[ProcessedLogEntry], cost_calculation_mode: str = "mixed"
-) -> List[ProcessedLogEntry]:
+def filter_entries_by_cost_options(entries: List[ProcessedLogEntry], cost_calculation_mode: str = "mixed") -> List[ProcessedLogEntry]:
     """Filter entries by cost calculation mode."""
     filtered_entries = []
 
@@ -74,9 +72,7 @@ def filter_entries_by_cost_options(
     return filtered_entries
 
 
-def get_exchange_rate_for_currency(
-    target_currency: str, api_key: Optional[str] = None, config: Optional[dict] = None
-) -> Optional[float]:
+def get_exchange_rate_for_currency(target_currency: str, api_key: Optional[str] = None, config: Optional[dict] = None) -> Optional[float]:
     """Get exchange rate for specified currency display."""
     try:
         # Get API key from config file (command line argument takes priority)
@@ -209,9 +205,7 @@ def main() -> int:
             target_currency = args.currency
             if args.debug:
                 logger.info(f"Getting exchange rate... (USD -> {target_currency})")
-            exchange_rate = get_exchange_rate_for_currency(
-                target_currency=target_currency, api_key=args.exchange_rate_api_key, config=config
-            )
+            exchange_rate = get_exchange_rate_for_currency(target_currency=target_currency, api_key=args.exchange_rate_api_key, config=config)
             if exchange_rate is None:
                 if args.debug:
                     logger.warning(f"Failed to get exchange rate. {target_currency} display will be disabled.")

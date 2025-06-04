@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2025-06-04
+
+### Documentation
+- **Option Documentation**: Improved command-line option documentation and help messages
+  - Added missing options to README.md: `--currency`, `--exchange-rate-api-key`, `--debug`
+  - Clarified exact/estimated cost calculation mode descriptions in help text
+  - Added currency conversion examples to advanced usage section
+  - Updated ruff line-length to 150 for better code formatting flexibility
+
 ## [1.1.1] - 2025-06-04
 
 ### Documentation

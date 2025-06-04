@@ -58,9 +58,7 @@ class TestTokenUsage:
 
     def test_zero_tokens_raise_error(self):
         """Test that all-zero token counts raise error."""
-        with pytest.raises(
-            CostCalculationError, match="At least one of input_tokens, output_tokens, or cache_creation_tokens must be positive"
-        ):
+        with pytest.raises(CostCalculationError, match="At least one of input_tokens, output_tokens, or cache_creation_tokens must be positive"):
             TokenUsage(input_tokens=0, output_tokens=0, cache_creation_tokens=0)
 
     def test_total_tokens_calculation(self):
@@ -189,9 +187,7 @@ class TestCostCalculator:
         assert abs(breakdown["cache_read_cost"] - (5000 / 1_000_000) * 0.3) < 1e-10
 
         # Verify total
-        expected_total = sum(
-            [breakdown["input_cost"], breakdown["output_cost"], breakdown["cache_creation_cost"], breakdown["cache_read_cost"]]
-        )
+        expected_total = sum([breakdown["input_cost"], breakdown["output_cost"], breakdown["cache_creation_cost"], breakdown["cache_read_cost"]])
         assert abs(breakdown["total_cost"] - expected_total) < 1e-10
 
     def test_is_cost_reliable(self):
@@ -301,9 +297,7 @@ class TestErrorHandling:
         calculator = CostCalculator(mock_manager)
         usage = TokenUsage(input_tokens=1000, output_tokens=500)
 
-        with pytest.raises(
-            CostCalculationError, match="Failed to calculate cost breakdown for model 'test-model': Mock pricing error"
-        ):
+        with pytest.raises(CostCalculationError, match="Failed to calculate cost breakdown for model 'test-model': Mock pricing error"):
             calculator.calculate_cost_breakdown("test-model", usage)
 
 

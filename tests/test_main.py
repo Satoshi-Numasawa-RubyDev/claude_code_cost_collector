@@ -325,9 +325,7 @@ class TestMainFunction:
     @patch("claude_code_cost_collector.main.collect_log_files")
     @patch("claude_code_cost_collector.main.parse_multiple_log_files")
     @patch("builtins.print")
-    def test_main_no_parseable_entries(
-        self, mock_print, mock_parse_files, mock_collect, mock_validate, mock_load, mock_parse_args, mock_args
-    ):
+    def test_main_no_parseable_entries(self, mock_print, mock_parse_files, mock_collect, mock_validate, mock_load, mock_parse_args, mock_args):
         """Test main function when no parseable entries are found."""
         mock_parse_args.return_value = mock_args
         mock_load.return_value = {}

@@ -803,9 +803,7 @@ class TestNewFormatIntegration:
         # Calculate cost manually
         input_cost = (sample_token_usage["input_tokens"] / 1_000_000) * pricing.input_price_per_million
         output_cost = (sample_token_usage["output_tokens"] / 1_000_000) * pricing.output_price_per_million
-        cache_creation_cost = (
-            sample_token_usage["cache_creation_input_tokens"] / 1_000_000
-        ) * pricing.cache_creation_price_per_million
+        cache_creation_cost = (sample_token_usage["cache_creation_input_tokens"] / 1_000_000) * pricing.cache_creation_price_per_million
         cache_read_cost = (sample_token_usage["cache_read_input_tokens"] / 1_000_000) * pricing.cache_read_price_per_million
 
         total_cost = input_cost + output_cost + cache_creation_cost + cache_read_cost
