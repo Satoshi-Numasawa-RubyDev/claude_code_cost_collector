@@ -436,7 +436,10 @@ class TestFormatDetector:
         mixed_data = [
             "",  # Empty line
             "invalid json line",  # Invalid JSON
-            '{"type": "assistant", "costUSD": 0.1, "timestamp": "2025-01-01T00:00:00Z", "sessionId": "s1", "message": {"model": "test"}}',
+            (
+                '{"type": "assistant", "costUSD": 0.1, "timestamp": "2025-01-01T00:00:00Z", '
+                '"sessionId": "s1", "message": {"model": "test"}}'
+            ),
             "",  # Another empty line
         ]
 
@@ -695,7 +698,10 @@ class TestFormatDetector:
         """Test file detection with mixed entry types including real sample patterns."""
         # Create a file with summary entries and v1.0.9 assistant entries
         mixed_entries = [
-            '{"type":"summary","summary":"Cost Tracking for Claude Code Command","leafUuid":"dbc7b016-0d3e-4e53-a87d-e2ea175a15cd"}',
+            (
+                '{"type":"summary","summary":"Cost Tracking for Claude Code Command",'
+                '"leafUuid":"dbc7b016-0d3e-4e53-a87d-e2ea175a15cd"}'
+            ),
             '{"type":"user","message":{"role":"user","content":"test"},"uuid":"aa87c72a-a2b7-4db0-93f3-0892afe18d40","timestamp":"2025-06-03T12:35:42.663Z"}',
             '{"type":"assistant","version":"1.0.9","uuid":"13f77474-e274-4692-ad57-772d224a5e06","timestamp":"2025-06-03T12:35:51.791Z","sessionId":"0da08427-d1b9-4055-8314-83d3f147b157","message":{"model":"claude-sonnet-4-20250514","ttftMs":5742,"usage":{"input_tokens":4,"output_tokens":252}}}',
         ]
