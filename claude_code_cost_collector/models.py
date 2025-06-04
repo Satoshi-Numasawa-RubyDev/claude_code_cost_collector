@@ -101,10 +101,9 @@ class ProcessedLogEntry:
             result["cache_read_tokens"] = self.cache_read_tokens
         if self.raw_data is not None:
             result["raw_data"] = self.raw_data
-        if self.cost_estimated:
-            result["cost_estimated"] = self.cost_estimated
-        if self.cost_confidence != "high":
-            result["cost_confidence"] = self.cost_confidence
+        # Always include cost estimation fields for consistency
+        result["cost_estimated"] = self.cost_estimated
+        result["cost_confidence"] = self.cost_confidence
         if self.ttft_ms is not None:
             result["ttft_ms"] = self.ttft_ms
         if self.entry_uuid is not None:

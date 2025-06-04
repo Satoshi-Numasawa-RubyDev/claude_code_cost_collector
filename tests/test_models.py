@@ -404,9 +404,11 @@ class TestProcessedLogEntryNewFields:
 
         result = entry.to_dict()
 
-        # Default values should not be included in output for compactness
-        assert "cost_estimated" not in result  # False is default
-        assert "cost_confidence" not in result  # "high" is default
+        # Cost estimation fields are always included for consistency
+        assert result["cost_estimated"] is False  # False is default
+        assert result["cost_confidence"] == "high"  # "high" is default
+        
+        # Other optional fields should not be included when None/default
         assert "ttft_ms" not in result  # None is default
         assert "entry_uuid" not in result  # None is default
         assert "parent_uuid" not in result  # None is default
