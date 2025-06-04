@@ -140,10 +140,7 @@ class TestErrorHandling:
 
         # Should inform user that no entries were found in range
         output = result.stdout + result.stderr
-        assert any(
-            keyword in output
-            for keyword in ["No log entries found in the specified date range", "no entries", "no data", "not found"]
-        )
+        assert any(keyword in output for keyword in ["No log entries found in the specified date range", "no entries", "no data", "not found"])
 
     @patch("claude_code_cost_collector.exchange.get_exchange_rate")
     def test_exchange_rate_failure_handling(self, mock_get_rate, test_data_dir):
