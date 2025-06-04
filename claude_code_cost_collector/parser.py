@@ -12,16 +12,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .cost_calculator import CostCalculator, TokenUsage, create_default_cost_calculator
+from .exceptions import LogParseError
 from .format_detector import FormatDetector, LogFormat
 from .models import ProcessedLogEntry
 
 logger = logging.getLogger(__name__)
-
-
-class LogParseError(Exception):
-    """Exception raised when log parsing fails."""
-
-    pass
 
 
 class LogParser:

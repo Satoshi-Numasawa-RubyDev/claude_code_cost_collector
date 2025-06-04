@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 from . import __version__
+from .constants import DEFAULT_GRANULARITY, DEFAULT_OUTPUT_FORMAT, GRANULARITIES, OUTPUT_FORMATS
 
 
 def validate_date(date_string: str) -> str:
@@ -93,8 +94,8 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-g",
         "--granularity",
-        choices=["daily", "monthly", "project", "session", "all"],
-        default="daily",
+        choices=GRANULARITIES,
+        default=DEFAULT_GRANULARITY,
         help="Aggregation granularity (default: %(default)s)",
     )
 
@@ -102,8 +103,8 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-o",
         "--output",
-        choices=["text", "json", "yaml", "csv"],
-        default="text",
+        choices=OUTPUT_FORMATS,
+        default=DEFAULT_OUTPUT_FORMAT,
         help="Output format (default: %(default)s)",
     )
 

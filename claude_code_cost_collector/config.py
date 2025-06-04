@@ -12,11 +12,8 @@ from typing import Any, Dict, Optional
 
 import yaml
 
-
-class ConfigError(Exception):
-    """Exception raised for configuration-related errors."""
-
-    pass
+from .constants import CONFIDENCE_LEVELS, GRANULARITIES, OUTPUT_FORMATS
+from .exceptions import ConfigError
 
 
 def get_default_config() -> Dict[str, Any]:
@@ -199,17 +196,13 @@ def validate_config(config: Dict[str, Any]) -> None:
             raise ConfigError(f"Missing required configuration key: {key}")
 
     # Validate granularity values
-    valid_granularities = ["daily", "monthly", "project", "session", "all"]
-    if config["default_granularity"] not in valid_granularities:
-        raise ConfigError(
-            f"Invalid granularity '{config['default_granularity']}'. Must be one of: {', '.join(valid_granularities)}"
-        )
+    if config["default_granularity"] not in GRANULARITIES:
+        raise ConfigError(f"Invalid granularity '{config['default_granularity']}'. Must be one of: {', '.join(GRANULARITIES)}")
 
     # Validate output format values
-    valid_formats = ["text", "json", "yaml", "csv"]
-    if config["default_output_format"] not in valid_formats:
+    if config["default_output_format"] not in OUTPUT_FORMATS:
         raise ConfigError(
-            f"Invalid output format '{config['default_output_format']}'. Must be one of: {', '.join(valid_formats)}"
+            f"Invalid output format '{config['default_output_format']}'. Must be one of: {', '.join(OUTPUT_FORMATS)}"
         )
 
     # Validate log directory exists or can be created
@@ -228,12 +221,9 @@ def validate_config(config: Dict[str, Any]) -> None:
 
         # Validate confidence_threshold
         if "confidence_threshold" in cost_calc_config:
-            valid_confidence_levels = ["high", "medium", "low"]
             confidence = cost_calc_config["confidence_threshold"]
-            if confidence not in valid_confidence_levels:
-                raise ConfigError(
-                    f"Invalid confidence_threshold '{confidence}'. Must be one of: {', '.join(valid_confidence_levels)}"
-                )
+            if confidence not in CONFIDENCE_LEVELS:
+                raise ConfigError(f"Invalid confidence_threshold '{confidence}'. Must be one of: {', '.join(CONFIDENCE_LEVELS)}")
 
         # Validate boolean fields
         boolean_fields = ["enable_estimated_costs", "show_confidence_level", "fallback_pricing_enabled"]

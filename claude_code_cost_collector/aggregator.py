@@ -10,15 +10,10 @@ import logging
 from collections import defaultdict
 from typing import Any, Dict, List
 
+from .exceptions import AggregationError
 from .models import AggregatedData, ProcessedLogEntries, ProcessedLogEntry
 
 logger = logging.getLogger(__name__)
-
-
-class AggregationError(Exception):
-    """Exception raised when aggregation fails."""
-
-    pass
 
 
 def aggregate_data(entries: ProcessedLogEntries, granularity: str, **kwargs: Any) -> AggregatedData:
