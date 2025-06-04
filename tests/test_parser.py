@@ -655,6 +655,42 @@ class TestLogParserV109Format:
         with pytest.raises(LogParseError, match="Missing required fields"):
             parser.parse_log_entry(raw_entry, "test_project", Path("/test/path"))
 
+    def test_parse_v1_0_9_api_error_message_skipped(self):
+        """Test that API error messages with synthetic models are properly skipped."""
+        raw_entry = {
+            "parentUuid": "28680b36-59cb-4f20-9e15-5c7ad0399339",
+            "isSidechain": False,
+            "userType": "external",
+            "cwd": "/Users/test/claude_code_cost_collector",
+            "sessionId": "1057789d-3770-4726-a8f2-c6555c2c09d3",
+            "version": "1.0.9",
+            "type": "assistant",
+            "uuid": "26cf4780-9997-4475-a85d-6180365ac04b",
+            "timestamp": "2025-06-03T10:19:25.764Z",
+            "message": {
+                "id": "922e6893-4abb-426e-add7-9f45753285f2",
+                "model": "<synthetic>",
+                "role": "assistant",
+                "stop_reason": "stop_sequence",
+                "stop_sequence": "",
+                "type": "message",
+                "usage": {
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "cache_creation_input_tokens": 0,
+                    "cache_read_input_tokens": 0,
+                    "server_tool_use": {"web_search_requests": 0},
+                },
+                "content": [{"type": "text", "text": "API Error: Connection error."}],
+            },
+            "isApiErrorMessage": True,
+        }
+
+        parser = LogParser()
+        # Should return None (skip entry) for API error messages
+        entry = parser.parse_log_entry(raw_entry, "test_project", Path("/test/path"))
+        assert entry is None
+
     def test_parse_file_with_mixed_formats(self):
         """Test parsing a file containing both legacy and v1.0.9 format entries."""
         log_data = [

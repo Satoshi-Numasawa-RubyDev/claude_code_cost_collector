@@ -104,6 +104,11 @@ class LogParser:
         if raw_entry.get("type") != "assistant":
             return None
 
+        # Skip API error messages (they use synthetic models and have no meaningful usage data)
+        if raw_entry.get("isApiErrorMessage", False):
+            logger.debug(f"Skipping API error message entry: {raw_entry.get('message', {}).get('content', 'N/A')}")
+            return None
+
         # Check for required fields (costUSD is not required for v1.0.9)
         required_fields = ["timestamp", "sessionId"]
         missing_fields = [field for field in required_fields if field not in raw_entry]
