@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-06-04
+
+### Added
+- **Claude Code v1.0.9 Log Format Support**: Added comprehensive support for new log format
+  - Automatic format detection between legacy (with `costUSD` field) and new format (without `costUSD` field)
+  - Token-based cost estimation for new format using latest model pricing data
+  - Support for 9 additional models including claude-sonnet-4-20250514, claude-opus-4-20250514, and haiku models
+  - Enhanced model pricing database with comprehensive coverage of all Claude models
+
+### Changed
+- **Cost Calculation Enhancement**: Improved cost accuracy for different log formats
+  - Legacy format: Uses exact `costUSD` values from logs for precise cost reporting
+  - New format: Calculates costs from token counts using current model pricing (slight estimation variance expected)
+  - Maintains backward compatibility with existing log files
+  - Enhanced user experience with seamless format transition
+
+### Documentation
+- **Updated User Information**: Enhanced README with Claude Code v1.0.9 compatibility information
+  - Clarified cost accuracy differences between legacy and new log formats
+  - Added explanation of token-based cost estimation for new format
+  - Improved user expectations regarding cost precision in different scenarios
+
 ## [1.0.3] - 2025-06-03
 
 ### Changed
